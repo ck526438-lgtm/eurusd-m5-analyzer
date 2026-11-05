@@ -1,0 +1,26 @@
+# ─── EURUSD M5 Analyzer — configuration ───────────────────────────────
+# Les secrets (Telegram, Discord) vont dans le fichier .env, PAS ici.
+
+symbol: EURUSD          # nom exact chez ton courtier MT5 (ex. EURUSDm, EURUSD.pro)
+source: auto            # auto (MT5 puis Yahoo) | mt5 | yfinance | csv
+csv_path: ""
+bars: 1500              # bougies M5 chargées à chaque analyse (~5 jours)
+broker_utc_offset: 0    # heure serveur MT5 - UTC (souvent 2 en hiver, 3 en été)
+
+desktop_notifications: true
+send_chart: true        # joindre le graphique à l'alerte Telegram
+journal_path: signals/journal.csv
+
+strategy:
+  min_score: 6.0        # 6 = plus d'alertes, 7-8 = seulement les meilleures
+  adx_min: 18
+  min_sl_pips: 4
+  max_sl_pips: 18       # au-delà, le setup est ignoré
+  rr_tp1: 1.5
+  rr_tp2: 2.5
+  min_room_r: 1.2       # espace minimum avant la prochaine zone opposée
+  cooldown_bars: 6      # 30 min minimum entre deux alertes du même sens
+  use_sessions: true
+  sessions_utc:         # heures UTC (= heure d'Abidjan)
+    - [7, 11]           # Londres
+    - [12, 17]          # Londres / New York

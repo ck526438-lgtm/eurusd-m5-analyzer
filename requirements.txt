@@ -1,0 +1,10 @@
+pandas>=2.0
+numpy>=1.24
+matplotlib>=3.7
+requests>=2.31
+pyyaml>=6.0
+python-dotenv>=1.0
+yfinance>=0.2.40
+# Optionnels :
+# MetaTrader5>=5.0.45   # Windows uniquement — données temps réel de ton courtier
+# plyer>=2.1            # notifications sur le bureau
