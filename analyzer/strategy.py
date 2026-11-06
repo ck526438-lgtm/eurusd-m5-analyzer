@@ -182,14 +182,16 @@ class Analyzer:
             if r >= 75:
                 F.append(Factor(f"RSI suracheté ({r:.0f})", -1))
             else:
-                F.append(Factor(f"RSI {'remonte' if r > r1 else 'ne confirme pas'} ({r:.0f})",
-                                1 if r > r1 and r < 70 else 0))
+                ok = r > r1 and r < 70
+                txt = "remonte" if ok else "remonte mais déjà élevé" if r > r1 else "ne confirme pas"
+                F.append(Factor(f"RSI {txt} ({r:.0f})", 1 if ok else 0))
         else:
             if r <= 25:
                 F.append(Factor(f"RSI survendu ({r:.0f})", -1))
             else:
-                F.append(Factor(f"RSI {'redescend' if r < r1 else 'ne confirme pas'} ({r:.0f})",
-                                1 if r < r1 and r > 30 else 0))
+                ok = r < r1 and r > 30
+                txt = "redescend" if ok else "redescend mais déjà bas" if r < r1 else "ne confirme pas"
+                F.append(Factor(f"RSI {txt} ({r:.0f})", 1 if ok else 0))
 
         # 5) Force du marché
         if self.adx[i] >= s.adx_min:

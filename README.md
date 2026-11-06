@@ -7,6 +7,8 @@ le **navigateur** (son + notification) et dans le **terminal**.
 
 ![Espace d'analyse](docs/analyse.png)
 
+📘 **[Guide d'utilisation complet (PDF, 24 pages)](docs/Guide_EURUSD_M5_Analyzer.pdf)** — installation, chaque écran, la méthode, les réglages, la routine de trading et le dépannage.
+
 > ⚠️ Outil d'aide à la décision, pas un robot de trading. Aucune stratégie ne gagne à tous les
 > coups : vérifie le backtest sur **tes** données MT5, passe par un **compte démo**, et ne risque
 > jamais plus de 1 % du capital par trade.

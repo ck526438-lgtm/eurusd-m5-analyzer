@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Guide d'utilisation — EURUSD M5 Analyzer</title>
+<style>
+  @page { size: A4; margin: 18mm 17mm 20mm 17mm; }
+  @page :first { margin: 0; }
+  :root {
+    --ink: #141821; --ink-2: #3a4252; --muted: #6b7486; --line: #dfe3ea; --soft: #f4f6f9;
+    --accent: #2f6fe0; --accent-soft: #eaf1fe; --up: #0f9e7a; --up-soft: #e6f6f1;
+    --down: #d93d52; --down-soft: #fdecee; --warn: #b9770e; --warn-soft: #fdf4e3; --dark: #0b0e13;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font: 9.8pt/1.5 "Inter", "DejaVu Sans", sans-serif; color: var(--ink); }
+  code, .mono, pre { font-family: "DejaVu Sans Mono", monospace; }
+  code { font-size: 8.8pt; background: var(--soft); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  h1, h2, h3 { line-height: 1.2; color: var(--ink); }
+  h1 { font-size: 21pt; margin: 0 0 4mm; letter-spacing: -.01em; }
+  h1 .num { color: var(--accent); font-weight: 700; margin-right: 3mm; }
+  h2 { font-size: 12.5pt; margin: 6mm 0 2.2mm; }
+  h2, h3 { break-after: avoid; }
+  h3 { font-size: 10.8pt; margin: 5mm 0 1.5mm; }
+  p { margin: 0 0 2.6mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5.5mm; }
+  li { margin-bottom: 1.2mm; }
+  a { color: var(--accent); text-decoration: none; }
+  .chapter { break-before: page; }
+  .lead { font-size: 10.8pt; color: var(--ink-2); margin-bottom: 4mm; }
+  .muted { color: var(--muted); }
+  .avoid { break-inside: avoid; }
+
+  /* couverture */
+  .cover { height: 297mm; background: var(--dark); color: #e6e9ef; padding: 26mm 22mm; position: relative; overflow: hidden; }
+  .cover .bars { position: absolute; right: -10mm; top: 52mm; display: flex; gap: 7mm; align-items: flex-end; opacity: .9; }
+  .cover .bars div { width: 13mm; border-radius: 2mm; position: relative; }
+  .cover .bars div::before { content: ""; position: absolute; left: 50%; width: 1.2mm; margin-left: -.6mm; top: -12mm; bottom: -12mm; background: inherit; border-radius: 1mm; }
+  .cover .tag { display: inline-block; font-size: 9pt; letter-spacing: .18em; text-transform: uppercase; color: #8fb3ff; border: 1px solid rgba(143,179,255,.4); border-radius: 20mm; padding: 1.5mm 4mm; }
+  .cover h1 { color: #fff; font-size: 40pt; margin: 14mm 0 3mm; letter-spacing: -.02em; line-height: 1.05; }
+  .cover h1 span { color: #4c8dff; }
+  .cover .sub { font-size: 15pt; color: #b7bfcc; max-width: 120mm; }
+  .cover .shot { position: absolute; left: 22mm; right: 22mm; bottom: 38mm; border-radius: 3mm; overflow: hidden; border: 1px solid #222936; box-shadow: 0 10mm 25mm rgba(0,0,0,.5); }
+  .cover .shot img { display: block; width: 100%; }
+  .cover .foot { position: absolute; left: 22mm; right: 22mm; bottom: 16mm; display: flex; justify-content: space-between; font-size: 9pt; color: #8a93a3; }
+
+  /* sommaire */
+  .toc { columns: 2; column-gap: 10mm; margin-top: 6mm; }
+  .toc a { display: flex; gap: 3mm; padding: 2.2mm 0; border-bottom: 1px solid var(--line); color: var(--ink); break-inside: avoid; }
+  .toc a b { color: var(--accent); width: 7mm; }
+  .toc a span.d { color: var(--muted); font-size: 8.8pt; display: block; }
+
+  /* encadrés */
+  .box { border-radius: 2.5mm; padding: 3.5mm 4.5mm; margin: 3.5mm 0 4.5mm; break-inside: avoid; border: 1px solid var(--line); background: var(--soft); }
+  .box > :last-child { margin-bottom: 0; }
+  .box .t { font-weight: 700; display: block; margin-bottom: 1mm; }
+  .box.info { background: var(--accent-soft); border-color: #c9dafc; }
+  .box.info .t { color: var(--accent); }
+  .box.ok { background: var(--up-soft); border-color: #bfe8dc; }
+  .box.ok .t { color: var(--up); }
+  .box.warn { background: var(--warn-soft); border-color: #f2dcb0; }
+  .box.warn .t { color: var(--warn); }
+  .box.danger { background: var(--down-soft); border-color: #f6c7ce; }
+  .box.danger .t { color: var(--down); }
+
+  /* étapes */
+  .steps { counter-reset: s; list-style: none; padding: 0; }
+  .steps > li { counter-increment: s; position: relative; padding: 0 0 2.6mm 11mm; break-inside: avoid; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: -.3mm; width: 6.8mm; height: 6.8mm; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 9pt; display: grid; place-items: center; }
+  .steps > li > b:first-child { display: block; }
+
+  pre { background: #0f131a; color: #dfe4ec; border-radius: 2.5mm; padding: 3.5mm 4.5mm; font-size: 8.4pt; line-height: 1.5; white-space: pre-wrap; margin: 2.5mm 0 4mm; break-inside: avoid; }
+  pre .c { color: #7c8698; }
+  pre .g { color: #34d3a6; } pre .r { color: #ff7b8c; } pre .y { color: #f2b84b; } pre .b { color: #fff; font-weight: 700; }
+  pre .bgG { background: #22c39a; color: #062018; font-weight: 700; }
+
+  table { width: 100%; border-collapse: collapse; margin: 2.5mm 0 4.5mm; font-size: 9.2pt; break-inside: auto; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  th { text-align: left; background: var(--soft); color: var(--ink-2); font-size: 8.3pt; text-transform: uppercase; letter-spacing: .04em; padding: 2mm 2.5mm; border-bottom: 1.5px solid var(--line); }
+  td { padding: 2mm 2.5mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.c, th.c { text-align: center; white-space: nowrap; }
+  td.k { font-weight: 600; white-space: nowrap; }
+
+  figure { margin: 3mm 0 5mm; break-inside: avoid; }
+  figure img { display: block; max-width: 100%; max-height: 92mm; object-fit: contain; border-radius: 2mm; border: 1px solid #222936; margin: 0 auto; }
+  figcaption { font-size: 8.6pt; color: var(--muted); margin-top: 1.8mm; text-align: center; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; align-items: start; }
+  .side { display: grid; grid-template-columns: 62mm 1fr; gap: 6mm; align-items: start; }
+  .side figure { margin-top: 0; }
+
+  .pill { display: inline-block; padding: .3mm 2.2mm; border-radius: 10mm; font-size: 8.3pt; font-weight: 700; white-space: nowrap; }
+  .p-up { background: var(--up-soft); color: var(--up); }
+  .p-down { background: var(--down-soft); color: var(--down); }
+  .p-blue { background: var(--accent-soft); color: var(--accent); }
+  .p-grey { background: var(--soft); color: var(--muted); border: 1px solid var(--line); }
+  .p-warn { background: var(--warn-soft); color: var(--warn); }
+
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding-left: 7mm; position: relative; }
+  .checklist li::before { content: ""; position: absolute; left: 0; top: 1mm; width: 3.6mm; height: 3.6mm; border: 1.4px solid var(--accent); border-radius: 1mm; }
+  .formula { text-align: center; font: 600 11pt "DejaVu Sans Mono", monospace; background: var(--soft); border: 1px solid var(--line); border-radius: 2.5mm; padding: 4mm; margin: 3mm 0; }
+</style>
+</head>
+<body>
+
+<!-- ====================================================== COUVERTURE -->
+<section class="cover">
+  <div class="bars">
+    <div style="height:44mm;background:#22c39a"></div>
+    <div style="height:62mm;background:#f0566a;margin-bottom:14mm"></div>
+    <div style="height:38mm;background:#22c39a;margin-bottom:24mm"></div>
+    <div style="height:70mm;background:#22c39a;margin-bottom:30mm"></div>
+  </div>
+  <span class="tag">Guide d'utilisation</span>
+  <h1>EURUSD <span>M5</span><br>Analyzer</h1>
+  <div class="sub">Installer, comprendre et utiliser l'espace d'analyse des chandeliers japonais — du premier lancement à la routine de trading.</div>
+  <div class="shot"><img src="img/full.jpg" alt=""></div>
+  <div class="foot"><span>Version 2.0 · novembre 2026</span><span>github.com/ck526438-lgtm/eurusd-m5-analyzer</span></div>
+</section>
+
+<!-- ====================================================== SOMMAIRE -->
+<section class="chapter">
+  <h1>Sommaire</h1>
+  <p class="lead">Ce guide explique tout ce qu'il faut savoir pour utiliser le système au quotidien. Lis au moins les chapitres 1 à 4 et le chapitre 11 avant de trader avec.</p>
+  <div class="toc">
+    <a href="#c1"><b>1</b><span>Présentation<span class="d">Ce que fait l'outil, ce qu'il ne fait pas</span></span></a>
+    <a href="#c2"><b>2</b><span>Installation<span class="d">Windows + MetaTrader 5, autres systèmes</span></span></a>
+    <a href="#c3"><b>3</b><span>Configurer MetaTrader 5<span class="d">Symbole et décalage horaire</span></span></a>
+    <a href="#c4"><b>4</b><span>Lancer et arrêter<span class="d">Commandes et options</span></span></a>
+    <a href="#c5"><b>5</b><span>L'onglet Analyse<span class="d">Graphique, radar, contexte, zones</span></span></a>
+    <a href="#c6"><b>6</b><span>Comprendre un signal<span class="d">Figures, score, qualité, SL/TP, rejets</span></span></a>
+    <a href="#c7"><b>7</b><span>L'onglet Signaux<span class="d">Journal, statuts, notes, export</span></span></a>
+    <a href="#c8"><b>8</b><span>Les notifications<span class="d">Terminal, navigateur, Windows</span></span></a>
+    <a href="#c9"><b>9</b><span>Le backtest<span class="d">Lancer, lire et exploiter les résultats</span></span></a>
+    <a href="#c10"><b>10</b><span>Les réglages<span class="d">Tous les paramètres expliqués</span></span></a>
+    <a href="#c11"><b>11</b><span>Routine de trading<span class="d">Taille de position, gestion, discipline</span></span></a>
+    <a href="#c12"><b>12</b><span>Dépannage<span class="d">Problèmes fréquents et solutions</span></span></a>
+    <a href="#c13"><b>13</b><span>Fichiers, sauvegarde, mises à jour<span class="d">Où sont tes données</span></span></a>
+  </div>
+  <div class="box danger" style="margin-top:10mm">
+    <span class="t">Avertissement</span>
+    Le trading sur le Forex comporte un risque élevé de perte en capital. Cet outil est une aide à la décision : il repère et explique des configurations, il ne garantit aucun résultat. Vérifie toujours le backtest sur tes propres données, commence en compte démo et ne risque jamais plus de 1 % de ton capital par trade.
+  </div>
+</section>
+
+<!-- ====================================================== 1 PRÉSENTATION -->
+<section class="chapter" id="c1">
+  <h1><span class="num">1</span>Présentation</h1>
+  <p class="lead">EURUSD M5 Analyzer surveille l'EURUSD en unité de temps 5 minutes. À chaque clôture de bougie, il cherche une figure de chandelier japonais, vérifie si le contexte la confirme, lui attribue une note sur 10 et, si la note est suffisante, t'avertit avec un plan de trade complet.</p>
+
+  <h2>Ce que fait l'outil</h2>
+  <ul>
+    <li><b>Détecte 12 figures de chandeliers</b> (avalements, pin bars, étoiles, pinces, trois soldats/corbeaux, cassures d'inside bar).</li>
+    <li><b>Les note sur 10</b> en combinant tendance H1, moyennes mobiles M5, zones de support/résistance, RSI, ADX et session de marché.</li>
+    <li><b>Calcule le plan de trade</b> : entrée, stop, deux objectifs (TP1 et TP2) et le rapport gain/risque.</li>
+    <li><b>Explique chaque décision</b>, y compris pourquoi il <i>ne</i> donne pas de signal.</li>
+    <li><b>Notifie</b> dans le terminal (bandeau coloré + bip) et dans le navigateur (son + notification).</li>
+    <li><b>Tient un journal</b> de tous les signaux et suit automatiquement leur résultat.</li>
+    <li><b>Backteste</b> la stratégie sur jusqu'à 100 000 bougies avec des statistiques détaillées.</li>
+  </ul>
+
+  <h2>Ce qu'il ne fait pas</h2>
+  <ul>
+    <li>Il <b>ne passe aucun ordre</b> : c'est toi qui décides et qui exécutes dans MetaTrader 5.</li>
+    <li>Il ne connaît pas l'actualité économique : il ne sait pas qu'une annonce (NFP, BCE, Fed, CPI) arrive. Consulte un calendrier économique.</li>
+    <li>Il ne fonctionne que sur l'EURUSD en M5 (le symbole peut être adapté au nom utilisé par ton courtier).</li>
+  </ul>
+
+  <h2>Comment il fonctionne</h2>
+  <ol class="steps">
+    <li><b>Récupération des prix</b>Toutes les 5 minutes, 8 secondes après la clôture de la bougie, il charge les dernières bougies depuis MetaTrader 5 (ou Yahoo Finance). Seules les bougies <b>clôturées</b> sont utilisées : le système n'utilise jamais une information qui n'était pas encore connue (vérifié par un test automatique), ce qui rend le backtest honnête.</li>
+    <li><b>Calcul des indicateurs</b>EMA 20/50/200, RSI 14, ATR 14, ADX 14, tendance H1 et zones de support/résistance construites à partir des points pivots.</li>
+    <li><b>Recherche d'une figure</b>Si aucune figure n'apparaît sur la dernière bougie, rien ne se passe.</li>
+    <li><b>Notation et contrôles de risque</b>La figure est notée sur 10 ; le stop, les objectifs et l'espace disponible jusqu'à la prochaine zone sont vérifiés.</li>
+    <li><b>Décision</b>Si tout est bon : signal, notification, entrée dans le journal. Sinon, le radar affiche la raison du refus.</li>
+  </ol>
+
+</section>
+
+<!-- ====================================================== 2 INSTALLATION -->
+<section class="chapter" id="c2">
+  <h1><span class="num">2</span>Installation</h1>
+  <p class="lead">L'installation se fait une seule fois. La configuration recommandée est un PC Windows avec MetaTrader 5, pour avoir les prix exacts de ton courtier en temps réel.</p>
+
+  <h2>Prérequis</h2>
+  <table>
+    <thead><tr><th>Élément</th><th>Détail</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Windows 10 ou 11</td><td>Nécessaire pour la connexion MetaTrader 5. (Sans MT5, l'outil marche aussi sur Linux, macOS et Termux avec Yahoo Finance.)</td></tr>
+      <tr><td class="k">Python 3.10 ou plus</td><td>À télécharger sur <b>python.org</b>. Pendant l'installation, coche impérativement <b>« Add Python to PATH »</b>.</td></tr>
+      <tr><td class="k">MetaTrader 5</td><td>Le terminal de ton courtier, installé et connecté à un compte (démo ou réel).</td></tr>
+      <tr><td class="k">Git (conseillé)</td><td>Pour télécharger le dépôt et le mettre à jour facilement (<b>git-scm.com</b>). Sinon, télécharge le ZIP depuis GitHub.</td></tr>
+      <tr><td class="k">Navigateur</td><td>Chrome, Edge ou Firefox récent.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Installation sous Windows (recommandée)</h2>
+  <ol class="steps">
+    <li><b>Télécharger le projet</b>Ouvre l'invite de commandes (touche Windows, tape <code>cmd</code>) et tape :
+      <pre>cd %USERPROFILE%\Documents
+git clone https://github.com/ck526438-lgtm/eurusd-m5-analyzer.git
+cd eurusd-m5-analyzer</pre>
+      Le dépôt est privé : Git te demandera de te connecter à ton compte GitHub la première fois.</li>
+    <li><b>Ouvrir MetaTrader 5</b>Lance MT5, connecte-toi à ton compte et vérifie que l'EURUSD est visible dans la fenêtre « Observation du marché ».</li>
+    <li><b>Lancer start.bat</b>Dans le dossier du projet, double-clique sur <code>start.bat</code>. La première fois, il crée un environnement Python dédié et installe toutes les dépendances (1 à 3 minutes). Les fois suivantes, il démarre directement.</li>
+    <li><b>Utiliser l'espace d'analyse</b>Ton navigateur s'ouvre sur <code>http://localhost:8000</code>. Le terminal reste ouvert : c'est lui qui fait tourner le système et qui affiche les notifications. <b>Ne le ferme pas</b> tant que tu veux recevoir des signaux.</li>
+  </ol>
+
+  <h2>Installation manuelle (tous systèmes)</h2>
+  <pre>pip install -r requirements.txt
+pip install MetaTrader5 plyer     <span class="c"># Windows uniquement (optionnels)</span>
+python main.py</pre>
+  <p>Sur Linux, macOS ou Termux (Android), MetaTrader 5 n'est pas disponible : l'outil passe automatiquement sur Yahoo Finance (gratuit, avec un léger retard possible).</p>
+
+  <h2>Premier lancement en mode démo</h2>
+  <p>Pour découvrir l'interface sans MetaTrader 5 :</p>
+  <pre>python main.py --demo</pre>
+  <div class="box warn"><span class="t">Le mode démo utilise un marché simulé</span>Les prix affichés en mode démo sont générés par le programme : ils ne correspondent pas au vrai EURUSD. Les signaux et le backtest en démo servent uniquement à apprendre l'interface. Le badge en haut à droite indique toujours la source : <span class="pill p-warn">● Démo (simulé)</span> ou <span class="pill p-up">● MetaTrader 5</span>.</div>
+</section>
+
+<!-- ====================================================== 3 MT5 -->
+<section class="chapter" id="c3">
+  <h1><span class="num">3</span>Configurer MetaTrader 5</h1>
+  <p class="lead">Deux réglages doivent correspondre à ton courtier : le nom exact du symbole et le décalage horaire de son serveur. Ils se changent dans l'onglet <b>Réglages → Données</b>.</p>
+
+  <h2>Le nom du symbole</h2>
+  <p>Chaque courtier nomme l'EURUSD à sa façon : <code>EURUSD</code>, <code>EURUSDm</code>, <code>EURUSD.pro</code>, <code>EURUSD#</code>… Ouvre la fenêtre <b>Observation du marché</b> dans MT5 (Ctrl+M) et recopie le nom exactement, majuscules et suffixe compris, dans le champ <b>Symbole chez le courtier</b>.</p>
+
+  <h2>Le décalage horaire du serveur</h2>
+  <p>MetaTrader 5 donne l'heure des bougies à l'heure de <b>son serveur</b>, qui est souvent UTC+2 en hiver et UTC+3 en été. Le système travaille en <b>UTC</b> (qui est aussi l'heure d'Abidjan) pour les sessions et la tendance H1. Pour trouver ton décalage :</p>
+  <ol class="steps">
+    <li><b>Regarde l'heure du serveur</b>Dans MT5, fenêtre « Observation du marché », l'heure est affichée en haut.</li>
+    <li><b>Compare avec l'heure UTC</b>À Abidjan, l'heure locale est l'heure UTC.</li>
+    <li><b>Calcule la différence</b>Si MT5 affiche 16:00 quand il est 14:00 à Abidjan, le décalage est <b>2</b>. Mets 2 dans <b>Décalage heure serveur MT5</b>.</li>
+  </ol>
+  <div class="box info"><span class="t">Vérification rapide</span>Après avoir enregistré, l'onglet Analyse affiche « Dernière bougie … UTC ». Cette heure doit être égale à l'heure d'Abidjan, arrondie aux 5 minutes précédentes. Pense à revérifier lors des changements d'heure d'été/hiver en Europe (fin mars et fin octobre).</div>
+
+  <h2>Les autres sources de données</h2>
+  <table>
+    <thead><tr><th>Source</th><th>Quand l'utiliser</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Auto</td><td>Par défaut : essaie MetaTrader 5, puis Yahoo Finance si MT5 n'est pas disponible.</td></tr>
+      <tr><td class="k">MetaTrader 5</td><td>Recommandé. Prix exacts de ton courtier, en temps réel, historique long pour le backtest.</td></tr>
+      <tr><td class="k">Yahoo Finance</td><td>Sans MT5 (téléphone, Mac, Linux). Gratuit, 60 jours d'historique maximum, petit retard possible.</td></tr>
+      <tr><td class="k">Fichier CSV</td><td>Pour backtester ton propre historique. Colonnes <code>time, open, high, low, close</code> en heure UTC.</td></tr>
+      <tr><td class="k">Démo</td><td>Pour découvrir l'interface. Prix simulés, jamais pour trader.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ====================================================== 4 LANCER -->
+<section class="chapter" id="c4">
+  <h1><span class="num">4</span>Lancer et arrêter</h1>
+  <p class="lead">Le système fonctionne tant que la fenêtre du terminal est ouverte. Pour l'arrêter, clique dans cette fenêtre et appuie sur <b>Ctrl + C</b>, ou ferme-la.</p>
+
+  <h2>Les quatre modes</h2>
+  <table>
+    <thead><tr><th>Commande</th><th>Ce qu'elle fait</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><code>python main.py</code></td><td>Lance l'espace d'analyse : ouvre le navigateur, analyse à chaque bougie, notifie dans le terminal et le navigateur. C'est le mode normal (c'est aussi ce que fait <code>start.bat</code>).</td></tr>
+      <tr><td class="k"><code>python main.py watch</code></td><td>Mode terminal seul : pas d'interface web, une ligne par bougie et un bandeau à chaque signal. Léger, idéal sur un petit PC ou sur Termux.</td></tr>
+      <tr><td class="k"><code>python main.py scan</code></td><td>Analyse la dernière bougie une seule fois, affiche le résultat et quitte.</td></tr>
+      <tr><td class="k"><code>python main.py backtest</code></td><td>Lance un backtest dans le terminal (même calcul que l'onglet Backtest).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Options utiles</h2>
+  <table>
+    <thead><tr><th>Option</th><th>Effet</th><th>Exemple</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><code>--demo</code></td><td>Utilise le marché simulé</td><td><code>python main.py --demo</code></td></tr>
+      <tr><td class="k"><code>--source</code></td><td>Force une source : mt5, yfinance, csv, demo</td><td><code>--source yfinance</code></td></tr>
+      <tr><td class="k"><code>--csv</code></td><td>Utilise un fichier d'historique</td><td><code>--csv historique.csv</code></td></tr>
+      <tr><td class="k"><code>--bars</code></td><td>Nombre de bougies chargées</td><td><code>backtest --bars 50000</code></td></tr>
+      <tr><td class="k"><code>--port</code></td><td>Change le port de l'interface (8000 par défaut)</td><td><code>--port 8080</code></td></tr>
+      <tr><td class="k"><code>--no-browser</code></td><td>N'ouvre pas le navigateur automatiquement</td><td></td></tr>
+      <tr><td class="k"><code>--no-bell</code></td><td>Coupe le bip du terminal</td><td></td></tr>
+      <tr><td class="k"><code>-v</code></td><td>Affiche les messages techniques (diagnostic)</td><td></td></tr>
+    </tbody>
+  </table>
+  <p>Avec <code>start.bat</code>, les options s'ajoutent après le nom : par exemple, crée un raccourci vers <code>start.bat watch</code> pour lancer directement le mode terminal.</p>
+
+  <div class="box ok"><span class="t">Bon réflexe</span>Lance l'outil quelques minutes avant l'ouverture de Londres (vers 6 h 50 à Abidjan). L'analyse démarre immédiatement au lancement, puis à chaque clôture M5. Le compte à rebours « Bougie » en haut de l'écran indique le temps restant avant la prochaine analyse.</div>
+</section>
+
+<!-- ====================================================== 5 ANALYSE -->
+<section class="chapter" id="c5">
+  <h1><span class="num">5</span>L'onglet Analyse</h1>
+  <p class="lead">C'est l'écran principal, celui que tu gardes ouvert pendant les sessions. Il se met à jour tout seul à chaque bougie.</p>
+
+  <h2>La barre du haut</h2>
+  <figure><img src="img/topbar.jpg" alt=""><figcaption>Navigation, source des données, compte à rebours, alertes et analyse manuelle</figcaption></figure>
+  <table>
+    <tbody>
+      <tr><td class="k">Onglets</td><td>Analyse, Signaux (le chiffre bleu indique les signaux encore en cours), Backtest, Réglages.</td></tr>
+      <tr><td class="k">Badge de source</td><td>Point vert pulsant = données réelles en direct. Orange = démo. Rouge = problème de données (voir le bandeau d'erreur).</td></tr>
+      <tr><td class="k">Bougie mm:ss</td><td>Temps restant avant la clôture de la bougie M5 en cours, donc avant la prochaine analyse.</td></tr>
+      <tr><td class="k">Cloche</td><td>Active ou coupe d'un clic le son et la notification du navigateur (jaune = activé).</td></tr>
+      <tr><td class="k">Analyser</td><td>Relance l'analyse immédiatement (utile après avoir reconnecté MT5).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>La cotation</h2>
+  <figure><img src="img/quote.jpg" alt=""><figcaption>Prix actuel, variation sur 24 h, plus haut / plus bas 24 h, volatilité et heure de la dernière bougie</figcaption></figure>
+  <p>L'<b>ATR M5</b> mesure la taille moyenne d'une bougie en pips. Sous 3 pips, le marché est très calme et les signaux sont rares ; au-delà de 10 pips, il est agité (souvent pendant une annonce économique).</p>
+
+  <h2>Le graphique</h2>
+  <figure><img src="img/chart_signal.jpg" alt=""><figcaption>Bougies M5, EMA 20 (jaune), 50 (bleue) et 200 (violette), zones S/R en pointillés, signaux passés (flèches) et niveaux du signal sélectionné</figcaption></figure>
+  <ul>
+    <li><b>Flèches</b> : chaque signal passé, avec sa qualité (A+, A, B). Flèche verte vers le haut = achat, rouge vers le bas = vente. <b>Clique sur une flèche</b> pour afficher ce signal dans le radar.</li>
+    <li><b>Lignes pointillées</b> : zones de support (vertes) et de résistance (rouges). Plus le trait est épais, plus la zone a été touchée souvent.</li>
+    <li><b>Entrée / SL / TP1 / TP2</b> : niveaux du signal sélectionné ou du signal en cours.</li>
+    <li><b>Boutons EMA, Zones, Signaux</b> : affichent ou masquent chaque élément. <b>Recentrer</b> revient aux dernières bougies.</li>
+    <li>Molette pour zoomer, glisser pour se déplacer. Passe la souris sur une bougie pour voir ses prix (O, H, L, C) en haut à gauche.</li>
+    <li>Le <b>RSI</b> en dessous est synchronisé avec le graphique. Les lignes 70 et 30 marquent les zones de surachat et de survente.</li>
+  </ul>
+</section>
+
+<section>
+  <h2 style="margin-top:0">Le radar</h2>
+  <p>Le radar est le cœur de l'outil : il montre l'analyse de la <b>dernière bougie clôturée</b>, en détail.</p>
+  <div class="side">
+    <figure><img src="img/radar_signal.jpg" alt=""><figcaption>Un signal validé, avec le détail des points</figcaption></figure>
+    <div>
+      <h3 style="margin-top:0">Ce qu'il affiche</h3>
+      <ul>
+        <li><b>La jauge</b> : le score sur 10. Le petit repère jaune marque ton score minimum (6 par défaut). La jauge est colorée seulement si le score l'atteint.</li>
+        <li><b>Le sens et la qualité</b> : ▲ ACHAT ou ▼ VENTE, et A+, A, B ou C.</li>
+        <li><b>La figure</b> détectée sur la bougie.</li>
+        <li><b>Le verdict</b> : « Signal validé » en vert, ou « Pas de signal : » suivi de la raison exacte.</li>
+        <li><b>Les niveaux</b> : entrée, stop (avec sa taille en pips), TP1 et TP2 (avec le rapport gain/risque, par ex. 1:1.5).</li>
+        <li><b>La liste des critères</b> : ✓ vert = critère rempli (points gagnés), ✕ rouge = critère défavorable (points perdus), · gris = neutre (0 point). Le total donne le score.</li>
+      </ul>
+      <h3>Les trois états du radar</h3>
+      <ul>
+        <li><b>Signal validé</b> : toutes les conditions sont réunies, une notification part.</li>
+        <li><b>Setup refusé</b> : une figure est là mais une condition manque. Très instructif : tu vois ce qui a manqué.</li>
+        <li><b>Aucune figure</b> : rien à analyser ; le radar rappelle le dernier setup repéré.</li>
+      </ul>
+      <p>Quand tu cliques sur un ancien signal (flèche, liste ou journal), le radar l'affiche avec son résultat. <b>« ← Revenir au direct »</b> revient à l'analyse en cours.</p>
+    </div>
+  </div>
+
+  <h2>Le contexte du marché</h2>
+  <div class="side">
+    <figure><img src="img/context.jpg" alt=""></figure>
+    <table style="margin-top:0">
+      <tbody>
+        <tr><td class="k">Tendance H1</td><td>Direction de fond sur l'heure (EMA 20/50 H1). Les meilleurs signaux vont dans son sens.</td></tr>
+        <tr><td class="k">Tendance M5</td><td>Alignement des EMA 20/50 sur le M5.</td></tr>
+        <tr><td class="k">RSI 14</td><td>Force des acheteurs/vendeurs. &gt;70 suracheté, &lt;30 survendu.</td></tr>
+        <tr><td class="k">ADX 14</td><td>Force de la tendance. &lt;18 sans direction : les signaux y perdent des points.</td></tr>
+        <tr><td class="k">Volatilité</td><td>ATR en pips (voir la cotation).</td></tr>
+        <tr><td class="k">Session</td><td>Active pendant les heures configurées (7 h–11 h et 12 h–17 h UTC par défaut).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+<div class="avoid">  <h2>Zones clés et derniers signaux</h2>
+  <figure><img src="img/zones_recent.jpg" alt=""><figcaption>À gauche, les zones classées autour du prix ; à droite, les 8 derniers signaux et leur statut</figcaption></figure></div>
+  <p>Les <b>zones clés</b> sont les niveaux où le prix a déjà fait demi-tour (points pivots regroupés). Les points indiquent combien de fois la zone a été touchée : à partir de 2, c'est une zone <b>forte</b>. La colonne de droite donne la distance au prix en pips (+ au-dessus, − en dessous). Dans <b>Derniers signaux</b>, clique sur une ligne pour revoir le signal sur le graphique.</p>
+</section>
+
+<!-- ====================================================== 6 SIGNAL -->
+<section class="chapter" id="c6">
+  <h1><span class="num">6</span>Comprendre un signal</h1>
+  <p class="lead">Un signal = une figure de chandelier + un contexte favorable + un plan de risque acceptable. Voici exactement comment chaque élément est évalué.</p>
+
+  <h2>Les 12 figures détectées</h2>
+  <table>
+    <thead><tr><th>Figure</th><th>Sens</th><th>Ce que le système cherche</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Avalement</td><td class="c"><span class="pill p-up">▲</span> <span class="pill p-down">▼</span></td><td>Une bougie dont le corps englobe entièrement celui de la bougie précédente, de couleur opposée, et au moins 10 % plus grand. Forte si le corps dépasse 1 ATR.</td></tr>
+      <tr><td class="k">Pin bar (marteau / étoile filante)</td><td class="c"><span class="pill p-up">▲</span> <span class="pill p-down">▼</span></td><td>Une longue mèche (au moins 2 fois le corps et 60 % de la bougie) qui montre un rejet du prix, et une mèche opposée courte (≤ 25 %).</td></tr>
+      <tr><td class="k">Étoile du matin / du soir</td><td class="c"><span class="pill p-up">▲</span> <span class="pill p-down">▼</span></td><td>Trois bougies : une grande bougie dans le sens de la baisse (ou hausse), une petite bougie d'hésitation, puis une bougie inverse qui clôture au-delà du milieu de la première.</td></tr>
+      <tr><td class="k">Trois soldats blancs / trois corbeaux noirs</td><td class="c"><span class="pill p-up">▲</span> <span class="pill p-down">▼</span></td><td>Trois bougies consécutives de même couleur, chacune avec un corps d'au moins 0,5 ATR et une clôture plus loin que la précédente.</td></tr>
+      <tr><td class="k">Pince basse / haute (tweezer)</td><td class="c"><span class="pill p-up">▲</span> <span class="pill p-down">▼</span></td><td>Deux bougies de couleur opposée avec des plus bas (ou plus hauts) quasi identiques : le niveau a été défendu deux fois.</td></tr>
+      <tr><td class="k">Cassure d'inside bar</td><td class="c"><span class="pill p-up">▲</span> <span class="pill p-down">▼</span></td><td>Une bougie « mère » (≥ 0,8 ATR), une bougie entièrement contenue dans la mère, puis une clôture au-delà de la mère.</td></tr>
+    </tbody>
+  </table>
+  <p>Les petites bougies (amplitude inférieure à 0,6 ATR) sont ignorées : une figure ne compte que si elle a du poids. Si plusieurs figures concordent sur la même bougie, la figure gagne 1 point de force. Si une figure d'achat et une figure de vente apparaissent ensemble, le système s'abstient.</p>
+
+  <h2>Le calcul du score sur 10</h2>
+  <table>
+    <thead><tr><th>Critère</th><th class="c">Points</th><th>Explication</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Force de la figure</td><td class="c">1 à 3</td><td>Selon la taille de la figure ; +1 si plusieurs figures concordent (maximum 3).</td></tr>
+      <tr><td class="k">Tendance H1</td><td class="c">+2 / 0 / −2</td><td>+2 dans le sens de la tendance de fond, −2 à contre-tendance, 0 si neutre.</td></tr>
+      <tr><td class="k">EMA 20/50 M5</td><td class="c">+1</td><td>Prix et EMA 20 du bon côté de l'EMA 50.</td></tr>
+      <tr><td class="k">EMA 200</td><td class="c">+0,5</td><td>Prix au-dessus (achat) ou en dessous (vente) de l'EMA 200.</td></tr>
+      <tr><td class="k">Zone clé</td><td class="c">+1 / +2</td><td>La mèche de la figure rejette un support (achat) ou une résistance (vente) : +2 si la zone est forte (≥ 2 touches), +1 sinon. À défaut, +1 si le prix rebondit sur la zone EMA 20/50.</td></tr>
+      <tr><td class="k">RSI</td><td class="c">+1 / 0 / −1</td><td>+1 si le RSI va dans le sens du trade sans être en excès ; −1 si déjà suracheté (≥ 75, achat) ou survendu (≤ 25, vente).</td></tr>
+      <tr><td class="k">ADX</td><td class="c">+1 / −1</td><td>+1 si l'ADX ≥ 18 (marché directionnel), −1 sinon.</td></tr>
+      <tr><td class="k">Session</td><td class="c">+0,5</td><td>Bougie clôturée pendant une session configurée.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>La qualité</h2>
+  <table>
+    <thead><tr><th class="c">Qualité</th><th class="c">Score</th><th>Interprétation</th></tr></thead>
+    <tbody>
+      <tr><td class="c"><span class="pill p-up">A+</span></td><td class="c">≥ 8</td><td>Configuration très complète : figure, tendance et zone sont alignées.</td></tr>
+      <tr><td class="c"><span class="pill p-blue">A</span></td><td class="c">≥ 7</td><td>Bonne configuration, un élément manque.</td></tr>
+      <tr><td class="c"><span class="pill p-warn">B</span></td><td class="c">≥ 6</td><td>Configuration acceptable, plus fragile. À privilégier seulement si le backtest le justifie.</td></tr>
+      <tr><td class="c"><span class="pill p-grey">C</span></td><td class="c">&lt; 6</td><td>Visible dans le radar, jamais notifiée avec le réglage par défaut.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 style="margin-top:0">Le plan de trade : entrée, stop, objectifs</h2>
+  <ul>
+    <li><b>Entrée</b> : le prix de clôture de la bougie signal. En pratique, tu entres au marché dès la notification (ouverture de la bougie suivante).</li>
+    <li><b>Stop (SL)</b> : derrière l'extrémité de la figure (le plus bas pour un achat, le plus haut pour une vente), avec une marge de 0,25 ATR. Il fait au minimum 4 pips. S'il dépasse 18 pips, le setup est refusé.</li>
+    <li><b>TP1</b> : 1,5 fois le risque (1:1.5).</li>
+    <li><b>TP2</b> : 2,5 fois le risque (1:2.5), ramené juste avant la prochaine zone opposée si elle est plus proche. Si cette zone est avant TP1, il n'y a qu'un objectif (affiché « TP »).</li>
+  </ul>
+  <div class="box info"><span class="t">Ce que signifie « R »</span>R est l'unité de risque : 1 R = la distance entre l'entrée et le stop. Gagner +1,5 R, c'est gagner une fois et demie ce que tu risquais. Si tu risques 10 $ par trade, +1,5 R = +15 $ et −1 R = −10 $. Le journal et le backtest comptent tout en R, ce qui les rend indépendants de la taille de ton compte.</div>
+
+  <h2>Pourquoi un setup est refusé</h2>
+  <p>Quand le radar affiche « Pas de signal », la raison est l'une des suivantes :</p>
+  <table>
+    <thead><tr><th>Message</th><th>Signification</th><th>Faut-il s'inquiéter ?</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Score insuffisant (x &lt; 6)</td><td>La figure existe mais le contexte ne la confirme pas assez.</td><td>Non, c'est le filtre normal. Regarde les critères en gris/rouge.</td></tr>
+      <tr><td class="k">Zone opposée trop proche</td><td>Une résistance (achat) ou un support (vente) bloque le prix à moins de 1,2 R : le gain potentiel est trop petit.</td><td>Non, c'est une protection.</td></tr>
+      <tr><td class="k">Stop trop large</td><td>La figure est si grande que le stop dépasse 18 pips.</td><td>Fréquent pendant les annonces économiques.</td></tr>
+      <tr><td class="k">Figures achat et vente contradictoires</td><td>La bougie forme à la fois une figure haussière et baissière.</td><td>Non, marché indécis.</td></tr>
+      <tr><td class="k">Hors des heures de session</td><td>La bougie s'est fermée en dehors des sessions configurées.</td><td>Non. Désactivable dans Réglages.</td></tr>
+      <tr><td class="k">Un signal a déjà été donné il y a moins de 30 min</td><td>Un signal dans le même sens vient d'être émis : on évite les doublons.</td><td>Non. Le délai se règle dans Réglages.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ====================================================== 7 SIGNAUX -->
+<section class="chapter" id="c7">
+  <h1><span class="num">7</span>L'onglet Signaux</h1>
+  <p class="lead">Le journal conserve tous les signaux et suit leur résultat tout seul, bougie après bougie, selon les règles de gestion de l'outil (50 % à TP1, stop au point d'entrée, reste à TP2).</p>
+  <figure><img src="img/journal_kpis.jpg" alt=""><figcaption>Les statistiques réelles du journal</figcaption></figure>
+  <figure><img src="img/journal.jpg" alt="" style="max-height:58mm"><figcaption>Le journal avec un signal déplié : détail du score et note personnelle</figcaption></figure>
+
+  <h2>Les statuts</h2>
+  <table>
+    <thead><tr><th>Statut</th><th>Signification</th><th class="c">Résultat</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-blue">En cours</span></td><td>Ni le stop ni TP2 n'ont été atteints. Le résultat affiché (en gris) est le résultat latent.</td><td class="c">variable</td></tr>
+      <tr><td><span class="pill p-up">TP2 atteint</span></td><td>TP1 puis TP2 touchés : trade complet gagnant.</td><td class="c">≈ +2 R</td></tr>
+      <tr><td><span class="pill p-up" style="opacity:.75">TP1 + BE</span></td><td>TP1 touché (50 % encaissé), puis retour au point d'entrée sur le reste.</td><td class="c">≈ +0,7 R</td></tr>
+      <tr><td><span class="pill p-down">Stop</span></td><td>Stop touché avant TP1.</td><td class="c">−1 R</td></tr>
+      <tr><td><span class="pill p-grey">Clôturé (temps)</span></td><td>Ni stop ni TP2 au bout de 4 heures : clôture au prix du moment.</td><td class="c">variable</td></tr>
+    </tbody>
+  </table>
+  <p>Les résultats intègrent un spread de 0,8 pip. Si le stop et un objectif sont touchés dans la même bougie, le système compte le stop (hypothèse prudente). La mention <span class="muted">« hist. »</span> signale un signal retrouvé dans l'historique au démarrage, quand l'outil était éteint.</p>
+
+  <h2>Utiliser le journal</h2>
+  <ul>
+    <li><b>Filtrer</b> par sens (achats/ventes), par statut et par qualité.</li>
+    <li><b>Cliquer sur une ligne</b> pour voir pourquoi le signal a été donné, écrire une <b>note</b> (« pris à 1.0841, sorti à la main », « pas pris : annonce BCE »…) et le revoir sur le graphique.</li>
+    <li><b>Exporter CSV</b> pour analyser dans Excel ou Google Sheets.</li>
+    <li><b>Conseil</b> : note systématiquement si tu as pris le trade ou non, et pourquoi. Après quelques semaines, tu sauras si tes décisions manuelles améliorent ou dégradent les résultats du système.</li>
+  </ul>
+</section>
+
+<!-- ====================================================== 8 NOTIFICATIONS -->
+<section class="chapter" id="c8">
+  <h1><span class="num">8</span>Les notifications</h1>
+  <p class="lead">Un nouveau signal est annoncé à trois endroits possibles. Les trois peuvent être actifs en même temps.</p>
+
+  <h2>Dans le terminal</h2>
+  <p>La fenêtre qui fait tourner l'outil affiche une ligne de suivi à chaque bougie, puis un bandeau coloré avec un bip à chaque signal :</p>
+<pre><span class="c">14:45</span>  EURUSD <span class="b">1.04056</span>  <span class="g">H1 ▲</span>  RSI 56  ADX 17  ATR 4.2p  │  <span class="c">aucune figure</span>
+<span class="c">12:35</span>  EURUSD <span class="b">1.04071</span>  <span class="g">H1 ▲</span>  RSI 53  ADX 36  ATR 4.6p  │  <span class="g">ACHAT</span> Avalement haussier 10.0/10 — <span class="g b">SIGNAL</span>
+
+<span class="bgG">  ▲ ACHAT EURUSD  ·  qualité A+  ·  score 10.0/10  </span>
+  Avalement haussier  —  bougie clôturée 06/11 12:40 UTC
+  Entrée <span class="b">1.04070</span>   Stop <span class="r">1.04030</span> (4.0 pips)   TP1 <span class="g">1.04130</span> (1:1.5)   TP2 <span class="g">1.04161</span> (1:2.28)
+    <span class="g">✓</span> Figure : Avalement haussier  <span class="c">+2</span>
+    <span class="g">✓</span> Dans le sens de la tendance H1  <span class="c">+2</span>
+    <span class="g">✓</span> EMA 20/50 M5 alignées  <span class="c">+1</span>
+    <span class="g">✓</span> Prix du bon côté de l'EMA 200  <span class="c">+0.5</span>
+    <span class="g">✓</span> Rejet du support 1.04053 (2 touches)  <span class="c">+2</span>
+    <span class="g">✓</span> RSI remonte (53)  <span class="c">+1</span>
+    <span class="g">✓</span> Marché directionnel (ADX 36)  <span class="c">+1</span>
+    <span class="g">✓</span> Session Londres / New York  <span class="c">+0.5</span></pre>
+  <p>Chaque ligne de suivi indique l'heure, le prix, la tendance H1, le RSI, l'ADX, l'ATR et l'état du radar (figure et raison du refus éventuel). Pour couper le bip : option <code>--no-bell</code>.</p>
+
+  <h2>Dans le navigateur</h2>
+  <div class="side">
+    <figure><img src="img/toast.jpg" alt=""><figcaption>Message affiché dans l'interface</figcaption></figure>
+    <div>
+      <p>À chaque signal, un message apparaît en bas à droite de l'interface. Tu peux aussi activer :</p>
+      <ul>
+        <li><b>Le son</b> : deux notes montantes pour un achat, descendantes pour une vente.</li>
+        <li><b>La notification du navigateur</b> : elle s'affiche même si l'onglet est en arrière-plan.</li>
+      </ul>
+      <p>Clique sur la <b>cloche</b> en haut à droite : le navigateur te demande l'autorisation la première fois, clique sur <b>Autoriser</b>. Le réglage fin (son seul, notification seule) se fait dans <b>Réglages → Notifications</b>.</p>
+    </div>
+  </div>
+  <div class="box warn"><span class="t">Le son nécessite un clic</span>Les navigateurs bloquent le son tant que tu n'as pas cliqué au moins une fois dans la page. Après avoir ouvert l'interface, clique n'importe où (par exemple sur la cloche).</div>
+
+  <h2>Notification Windows</h2>
+  <p>Pour être prévenu même navigateur fermé, installe le module <code>plyer</code> (déjà fait par <code>start.bat</code>), puis active <b>Notification Windows</b> dans <b>Réglages → Notifications</b>.</p>
+</section>
+
+<!-- ====================================================== 9 BACKTEST -->
+<section class="chapter" id="c9">
+  <h1><span class="num">9</span>Le backtest</h1>
+  <p class="lead">Le backtest rejoue la stratégie sur l'historique, bougie par bougie, comme si l'outil avait tourné tout ce temps. C'est la seule façon de savoir si la stratégie fonctionne chez <b>ton</b> courtier avant de risquer de l'argent.</p>
+
+  <h2>Lancer un backtest</h2>
+  <figure><img src="img/bt_form.jpg" alt=""></figure>
+  <ol class="steps">
+    <li><b>Choisis l'historique</b>Prends le plus long possible : <b>50 000 bougies (≈ 6 mois)</b> avec MetaTrader 5. Avec Yahoo Finance, la limite est d'environ 60 jours (≈ 17 000 bougies).</li>
+    <li><b>Ajuste si besoin</b>Le score minimum et le spread, pour tester une variante sans toucher à tes réglages.</li>
+    <li><b>Clique sur « Lancer le backtest »</b>Compte 5 à 30 secondes selon la longueur.</li>
+  </ol>
+  <p>Règles de simulation : un seul trade à la fois ; 50 % fermé à TP1 puis stop au point d'entrée ; reste à TP2 ; sortie forcée après 4 h ; spread payé à l'entrée ; stop compté en premier si stop et objectif sont dans la même bougie.</p>
+
+  <h2>Lire les résultats</h2>
+  <figure><img src="img/bt_kpis.jpg" alt=""><figcaption>Exemple en mode démo (marché simulé) : ces chiffres ne représentent pas le vrai EURUSD</figcaption></figure>
+  <table>
+    <thead><tr><th>Indicateur</th><th>Définition</th><th>Repère</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Trades</td><td>Nombre de trades simulés, avec la répartition des sorties.</td><td>≥ 100 pour que les chiffres aient du sens.</td></tr>
+      <tr><td class="k">Réussite</td><td>Part des trades terminés en gain.</td><td>Avec ces objectifs, 40–50 % peut suffire.</td></tr>
+      <tr><td class="k">Résultat</td><td>Somme des résultats en R. À 1 % de risque par trade, +20 R ≈ +20 % du capital.</td><td>Positif.</td></tr>
+      <tr><td class="k">Espérance</td><td>Gain moyen par trade, en R. L'indicateur le plus important.</td><td>&gt; +0,10 R : intéressant.</td></tr>
+      <tr><td class="k">Profit factor</td><td>Total des gains ÷ total des pertes.</td><td>&gt; 1,3 solide ; 1–1,3 fragile ; &lt; 1 perdant.</td></tr>
+      <tr><td class="k">Drawdown max</td><td>Plus forte baisse depuis un sommet de la courbe de capital.</td><td>Doit être supportable pour toi.</td></tr>
+      <tr><td class="k">Pertes d'affilée</td><td>Plus longue série de trades perdants.</td><td>Prépare-toi à la vivre en réel.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <figure style="margin-top:0"><img src="img/bt_charts.jpg" alt=""><figcaption>Courbe de capital (en R cumulés) et résultat par heure de clôture</figcaption></figure>
+  <ul>
+    <li><b>Courbe de capital</b> : elle doit monter de façon régulière. Une courbe qui ne monte que grâce à 2 ou 3 trades est fragile.</li>
+    <li><b>Par heure</b> : repère les heures qui perdent systématiquement et ajuste les sessions dans Réglages.</li>
+  </ul>
+  <figure><img src="img/bt_patterns.jpg" alt=""><figcaption>Résultat par figure : la base pour choisir les figures actives</figcaption></figure>
+  <ul>
+    <li><b>Par figure</b> : certaines figures marchent mieux que d'autres selon le courtier et la période. Désactive celles qui perdent nettement <b>et</b> qui ont assez de trades (au moins 20).</li>
+    <li><b>Par qualité</b> : vérifie que les A+ font mieux que les B. Si les B perdent, monte le score minimum à 7.</li>
+  </ul>
+
+  <h2>Méthode pour améliorer sans se tromper</h2>
+  <ol class="steps">
+    <li><b>Backteste avec les réglages par défaut</b>sur 50 000 bougies MT5. Note les résultats.</li>
+    <li><b>Change un seul réglage à la fois</b>(par exemple désactiver une figure ou passer le score minimum à 7) et relance.</li>
+    <li><b>Garde le changement seulement s'il améliore nettement</b>l'espérance et le drawdown, pas seulement le résultat total.</li>
+    <li><b>Vérifie sur une autre période</b>Si un réglage n'améliore que les 6 derniers mois et pas les précédents, c'est probablement de la chance.</li>
+    <li><b>Passe en compte démo</b>pendant au moins 2 à 4 semaines, en comparant le journal en direct avec le backtest.</li>
+  </ol>
+  <div class="box danger"><span class="t">Le piège de la sur-optimisation</span>À force d'ajuster les réglages pour que le passé soit parfait, on obtient une stratégie qui colle à l'historique mais échoue sur le futur. Moins de règles, des échantillons d'au moins 100 trades et des changements prudents valent mieux qu'un backtest « parfait ».</div>
+</section>
+
+<!-- ====================================================== 10 RÉGLAGES -->
+<section class="chapter" id="c10">
+  <h1><span class="num">10</span>Les réglages</h1>
+  <p class="lead">Tous les paramètres se modifient dans l'onglet Réglages. Clique sur <b>Enregistrer</b> : ils sont sauvegardés dans <code>config.yaml</code> et l'analyse est relancée aussitôt. <b>Annuler</b> recharge les valeurs enregistrées.</p>
+
+  <h2>Données</h2>
+  <figure><img src="img/set_data.jpg" alt=""></figure>
+  <table>
+    <thead><tr><th>Paramètre</th><th class="c">Défaut</th><th>Effet</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Source</td><td class="c">Auto</td><td>D'où viennent les prix (voir chapitre 3).</td></tr>
+      <tr><td class="k">Symbole chez le courtier</td><td class="c">EURUSD</td><td>Nom exact dans MT5.</td></tr>
+      <tr><td class="k">Bougies chargées</td><td class="c">1 500</td><td>Historique utilisé pour l'analyse en direct (≈ 5 jours). Suffisant ; inutile d'augmenter.</td></tr>
+      <tr><td class="k">Décalage heure serveur MT5</td><td class="c">0</td><td>Différence entre l'heure du serveur et UTC (souvent 2 ou 3).</td></tr>
+      <tr><td class="k">Fichier CSV</td><td class="c">—</td><td>Chemin du fichier si la source est CSV.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Sélection des signaux</h2>
+  <figure><img src="img/set_select.jpg" alt=""></figure>
+  <table>
+    <thead><tr><th>Paramètre</th><th class="c">Défaut</th><th>Effet</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Score minimum</td><td class="c">6</td><td>Note minimale pour qu'un setup devienne un signal. Plus haut = moins de signaux, en principe de meilleure qualité.</td></tr>
+      <tr><td class="k">ADX minimum</td><td class="c">18</td><td>Seuil sous lequel le marché est considéré « sans direction » (−1 point).</td></tr>
+      <tr><td class="k">Délai entre signaux</td><td class="c">6 bougies</td><td>Pas deux signaux du même sens en moins de 30 minutes.</td></tr>
+      <tr><td class="k">Seulement pendant les sessions</td><td class="c">Oui</td><td>Ignore les setups en dehors des heures de session.</td></tr>
+      <tr><td class="k">Sessions (UTC)</td><td class="c">7-11, 12-17</td><td>Heures de début et de fin, séparées par des virgules. Ex. : <code>7-11, 12-16</code>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2 style="margin-top:0">Gestion du risque</h2>
+  <figure><img src="img/set_risk.jpg" alt=""></figure>
+  <table>
+    <thead><tr><th>Paramètre</th><th class="c">Défaut</th><th>Effet</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Stop minimum</td><td class="c">4 pips</td><td>Un stop plus serré est élargi à cette valeur (évite d'être sorti par le spread et le bruit).</td></tr>
+      <tr><td class="k">Stop maximum</td><td class="c">18 pips</td><td>Au-delà, le setup est refusé.</td></tr>
+      <tr><td class="k">Marge sous la mèche</td><td class="c">0,25 ATR</td><td>Distance ajoutée derrière l'extrémité de la figure.</td></tr>
+      <tr><td class="k">TP1</td><td class="c">1,5 R</td><td>Premier objectif.</td></tr>
+      <tr><td class="k">TP2</td><td class="c">2,5 R</td><td>Second objectif (doit être ≥ TP1).</td></tr>
+      <tr><td class="k">Espace mini avant zone opposée</td><td class="c">1,2 R</td><td>Refuse le setup si une zone bloque le prix plus tôt.</td></tr>
+      <tr><td class="k">Spread simulé</td><td class="c">0,8 pip</td><td>Coût utilisé par le journal et le backtest. Mets le spread moyen de ton courtier.</td></tr>
+      <tr><td class="k">Durée max d'un trade</td><td class="c">48 bougies</td><td>Sortie forcée après 4 h.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Figures actives</h2>
+  <figure><img src="img/set_patterns.jpg" alt=""></figure>
+  <p>Décoche une figure pour que le système l'ignore complètement. Fais-le uniquement sur la base d'un backtest suffisamment long (voir chapitre 9). La dernière section, <b>Notifications</b>, règle le son, la notification du navigateur (mémorisés dans ton navigateur) et la notification Windows (enregistrée dans <code>config.yaml</code>).</p>
+
+</section>
+
+<!-- ====================================================== 11 ROUTINE -->
+<section class="chapter" id="c11">
+  <h1><span class="num">11</span>Routine de trading recommandée</h1>
+  <p class="lead">Le système trouve les opportunités ; ta discipline fait le résultat. Voici une routine simple et cohérente avec la façon dont le système mesure ses résultats.</p>
+
+  <h2>Calculer la taille de position</h2>
+  <p>Risque toujours un pourcentage fixe de ton capital (1 % maximum) et adapte le nombre de lots à la taille du stop indiquée dans le signal :</p>
+  <div class="formula">Lots = (Capital × 1 %) ÷ (Stop en pips × 10 $)</div>
+  <p>Sur l'EURUSD, avec un compte en dollars, 1 pip vaut environ 10 $ pour 1 lot standard (1,00), 1 $ pour 0,10 lot et 0,10 $ pour 0,01 lot.</p>
+  <table>
+    <thead><tr><th>Capital</th><th>Risque 1 %</th><th>Stop du signal</th><th>Calcul</th><th>Lots</th></tr></thead>
+    <tbody>
+      <tr><td>500 $</td><td>5 $</td><td>5 pips</td><td>5 ÷ (5 × 10)</td><td class="k">0,10</td></tr>
+      <tr><td>1 000 $</td><td>10 $</td><td>8 pips</td><td>10 ÷ (8 × 10)</td><td class="k">0,12</td></tr>
+      <tr><td>2 000 $</td><td>20 $</td><td>12,5 pips</td><td>20 ÷ (12,5 × 10)</td><td class="k">0,16</td></tr>
+    </tbody>
+  </table>
+  <p>Arrondis toujours vers le bas. Si ton compte est en euros ou en FCFA, la valeur du pip change : vérifie-la dans MT5 (spécification du symbole) ou avec un calculateur de position.</p>
+
+  <h2>Au moment du signal</h2>
+  <ul class="checklist">
+    <li>Vérifie le calendrier économique : pas d'annonce majeure sur l'EUR ou l'USD dans les 30 minutes.</li>
+    <li>Regarde le radar : qualité, critères remplis, distance à la prochaine zone.</li>
+    <li>Contrôle le spread dans MT5 : s'il est anormalement élevé (&gt; 2 pips), passe ton tour.</li>
+    <li>Calcule la taille de position avec le stop du signal.</li>
+    <li>Place l'ordre au marché avec le <b>stop</b> et un <b>TP à TP1</b> sur la moitié de la position, et un <b>TP à TP2</b> sur l'autre moitié (deux ordres de taille égale).</li>
+  </ul>
+
+  <h2>Pendant le trade</h2>
+  <ul class="checklist">
+    <li>Quand TP1 est touché, déplace le stop de la seconde moitié au <b>point d'entrée</b> (break-even).</li>
+    <li>Si le trade n'a abouti ni au stop ni à TP2 au bout de 4 heures, clôture-le.</li>
+    <li>Ne déplace jamais le stop pour « laisser une chance » au trade.</li>
+    <li>Ajoute une note dans le journal : pris ou non, prix réels d'entrée et de sortie, ressenti.</li>
+    <li>Une fois par semaine, compare les statistiques du journal avec celles du backtest.</li>
+  </ul>
+
+  <div class="box warn"><span class="t">Règles de protection conseillées</span>Arrête-toi pour la journée après 3 pertes consécutives ou −3 R. Ne double jamais la taille de position pour « se refaire ». Ne trade pas au réel avant d'avoir validé 2 à 4 semaines en démo.</div>
+</section>
+
+<!-- ====================================================== 12 DÉPANNAGE -->
+<section class="chapter" id="c12">
+  <h1><span class="num">12</span>Dépannage</h1>
+  <table>
+    <thead><tr><th style="width:34%">Problème</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td class="k">« python » n'est pas reconnu</td><td>Python n'est pas dans le PATH. Réinstalle Python en cochant « Add Python to PATH », puis ferme et rouvre l'invite de commandes.</td></tr>
+      <tr><td class="k">Le badge affiche Yahoo Finance au lieu de MetaTrader 5</td><td>MT5 n'est pas joignable : vérifie qu'il est ouvert et connecté, que <code>MetaTrader5</code> est installé (<code>pip install MetaTrader5</code>) et que tu utilises Python 64 bits. Puis clique sur <b>Analyser</b>.</td></tr>
+      <tr><td class="k">« Aucune donnée MT5 pour EURUSD »</td><td>Le nom du symbole ne correspond pas à ton courtier. Recopie-le depuis « Observation du marché » dans Réglages → Données.</td></tr>
+      <tr><td class="k">L'heure de la dernière bougie est décalée</td><td>Corrige le « Décalage heure serveur MT5 » (chapitre 3).</td></tr>
+      <tr><td class="k">Bandeau rouge « Données indisponibles »</td><td>Problème de connexion à la source. Vérifie Internet et MT5. Le système réessaie automatiquement à chaque bougie.</td></tr>
+      <tr><td class="k">La page ne s'ouvre pas</td><td>Vérifie que le terminal est toujours ouvert et sans erreur. Ouvre manuellement <code>http://localhost:8000</code>.</td></tr>
+      <tr><td class="k">« Address already in use » / port occupé</td><td>L'outil tourne déjà dans une autre fenêtre, ou un autre programme utilise le port. Ferme l'autre fenêtre ou lance avec <code>--port 8080</code>.</td></tr>
+      <tr><td class="k">Pas de son</td><td>Clique une fois dans la page (exigence des navigateurs), vérifie la cloche et le volume du PC.</td></tr>
+      <tr><td class="k">Pas de notification du navigateur</td><td>Autorise les notifications pour <code>localhost</code> dans les paramètres du navigateur, et vérifie que le mode « Ne pas déranger » de Windows est désactivé.</td></tr>
+      <tr><td class="k">Aucun signal depuis longtemps</td><td>C'est normal en dehors des sessions, en marché calme (ATR faible) ou sans tendance (ADX bas). Regarde le radar : il dit ce qui manque. Avec les réglages par défaut, compte en moyenne quelques signaux par jour.</td></tr>
+      <tr><td class="k">Caractères bizarres dans le terminal</td><td>Utilise <b>Windows Terminal</b> (installé par défaut sur Windows 11) plutôt que l'ancienne invite de commandes.</td></tr>
+      <tr><td class="k">Le backtest est lent</td><td>50 000 bougies prennent environ 10 à 30 secondes. C'est normal.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ====================================================== 13 FICHIERS -->
+<section class="chapter" id="c13">
+  <h1><span class="num">13</span>Fichiers, sauvegarde et mises à jour</h1>
+
+  <h2>Où sont tes données</h2>
+  <table>
+    <thead><tr><th>Fichier</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><code>config.yaml</code></td><td>Tous tes réglages. Modifiable dans l'interface ou avec un éditeur de texte.</td></tr>
+      <tr><td class="k"><code>data/journal.db</code></td><td>Le journal des signaux, avec résultats et notes (base SQLite).</td></tr>
+      <tr><td class="k"><code>docs/</code></td><td>Ce guide et les captures d'écran.</td></tr>
+    </tbody>
+  </table>
+  <p>Pour <b>sauvegarder</b>, copie <code>config.yaml</code> et le dossier <code>data</code> sur une clé USB ou un cloud. Le dossier <code>data</code> n'est jamais envoyé sur GitHub : ton journal reste privé sur ton PC. Pour repartir d'un journal vide, arrête l'outil et supprime <code>data/journal.db</code>.</p>
+
+  <h2>Mettre à jour l'outil</h2>
+  <pre>cd %USERPROFILE%\Documents\eurusd-m5-analyzer
+git pull
+.venv\Scripts\activate
+pip install -r requirements.txt</pre>
+  <p>Tes réglages et ton journal sont conservés. Si <code>git pull</code> signale un conflit sur <code>config.yaml</code>, sauvegarde ton fichier, lance <code>git checkout config.yaml</code>, refais le <code>git pull</code>, puis remets tes valeurs dans l'onglet Réglages.</p>
+
+  <h2>Pour aller plus loin</h2>
+  <ul>
+    <li>L'API de l'outil est documentée sur <code>http://localhost:8000/api/docs</code> (pour brancher d'autres programmes).</li>
+    <li>Le code est organisé en modules dans <code>analyzer/</code> (figures, indicateurs, zones, score, backtest, journal, serveur, terminal) et l'interface dans <code>web/</code>.</li>
+    <li>Les tests automatiques se lancent avec <code>python -m pytest -q</code> et tournent sur GitHub à chaque mise à jour.</li>
+  </ul>
+
+  <div class="box info" style="margin-top:8mm"><span class="t">Récapitulatif en 5 lignes</span>
+    1. Ouvre MetaTrader 5, puis double-clique sur <code>start.bat</code>.<br>
+    2. Garde le terminal ouvert et l'onglet Analyse visible pendant les sessions.<br>
+    3. À chaque signal : vérifie l'actualité, calcule ta taille de position, place stop + TP1 + TP2.<br>
+    4. À TP1, stop au point d'entrée. Note chaque trade dans le journal.<br>
+    5. Valide tout par le backtest et le compte démo avant de passer au réel.
+  </div>
+</section>
+
+</body>
+</html>
