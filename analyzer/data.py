@@ -72,16 +72,53 @@ def from_csv(path: str) -> pd.DataFrame:
     return df[COLS].astype(float).sort_index()
 
 
-def load_data(cfg: Config) -> pd.DataFrame:
+def from_demo(cfg: Config, seed: int = 42) -> pd.DataFrame:
+    """Marché EURUSD simulé, aligné sur l'heure actuelle (une nouvelle bougie toutes les 5 min).
+
+    Sert à découvrir l'interface sans MetaTrader 5 ni connexion. Les prix ne sont PAS réels.
+    """
+    import numpy as np
+
+    end = pd.Timestamp.now(tz="UTC").floor("5min") - pd.Timedelta(minutes=5)
+    anchor = pd.Timestamp("2026-01-01", tz="UTC")
+    n_total = int((end - anchor) / pd.Timedelta(minutes=5)) + 1
+    rng = np.random.default_rng(seed)
+    idx = pd.date_range(anchor, periods=n_total, freq="5min")
+    hours = idx.hour.to_numpy()
+    vol = np.where((hours >= 7) & (hours < 17), 0.00022, 0.0001)
+    regime = np.repeat(rng.choice([-1, 0, 1], n_total // 300 + 1), 300)[:n_total] * 0.000025
+    steps = regime + rng.normal(0, 1, n_total) * vol
+    dev = np.empty(n_total)
+    x = 0.0
+    for k in range(n_total):  # retour lent vers 1.08 : niveau plausible sur des mois
+        x = x * (1 - 1 / 20000) + steps[k]
+        dev[k] = x
+    close = 1.08 + dev
+    open_ = np.r_[close[0], close[:-1]]
+    wick = np.abs(rng.normal(0, 1, (2, n_total))) * vol * 0.8
+    df = pd.DataFrame({"open": open_, "high": np.maximum(open_, close) + wick[0],
+                       "low": np.minimum(open_, close) - wick[1], "close": close,
+                       "volume": rng.integers(50, 400, n_total).astype(float)}, index=idx)
+    return df.tail(cfg.bars)
+
+
+SOURCE_LABELS = {"mt5": "MetaTrader 5", "yfinance": "Yahoo Finance", "csv": "Fichier CSV",
+                 "demo": "Démo (simulé)"}
+
+
+def load_data(cfg: Config) -> tuple[pd.DataFrame, str]:
+    """Renvoie (bougies M5 clôturées, source réellement utilisée)."""
     if cfg.source == "csv":
-        return from_csv(cfg.csv_path)
+        return from_csv(cfg.csv_path).tail(cfg.bars), "csv"
+    if cfg.source == "demo":
+        return from_demo(cfg), "demo"
     if cfg.source == "mt5":
-        return from_mt5(cfg)
+        return from_mt5(cfg), "mt5"
     if cfg.source == "yfinance":
-        return from_yfinance(cfg)
+        return from_yfinance(cfg), "yfinance"
     # auto : MT5 si disponible (meilleure qualité), sinon Yahoo
     try:
-        return from_mt5(cfg)
+        return from_mt5(cfg), "mt5"
     except Exception as e:  # noqa: BLE001
         log.info("MT5 indisponible (%s) -> Yahoo Finance", e)
-        return from_yfinance(cfg)
+        return from_yfinance(cfg), "yfinance"

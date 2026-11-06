@@ -1,26 +1,32 @@
-# ─── EURUSD M5 Analyzer — configuration ───────────────────────────────
-# Les secrets (Telegram, Discord) vont dans le fichier .env, PAS ici.
-
+# EURUSD M5 Analyzer — configuration (modifiable aussi dans l'onglet Réglages)
 symbol: EURUSD          # nom exact chez ton courtier MT5 (ex. EURUSDm, EURUSD.pro)
-source: auto            # auto (MT5 puis Yahoo) | mt5 | yfinance | csv
-csv_path: ""
+source: auto            # auto (MT5 puis Yahoo) | mt5 | yfinance | csv | demo
+csv_path: ''
 bars: 1500              # bougies M5 chargées à chaque analyse (~5 jours)
 broker_utc_offset: 0    # heure serveur MT5 - UTC (souvent 2 en hiver, 3 en été)
-
-desktop_notifications: true
-send_chart: true        # joindre le graphique à l'alerte Telegram
-journal_path: signals/journal.csv
-
+desktop_notifications: false   # notification Windows (pip install plyer)
 strategy:
-  min_score: 6.0        # 6 = plus d'alertes, 7-8 = seulement les meilleures
-  adx_min: 18
-  min_sl_pips: 4
-  max_sl_pips: 18       # au-delà, le setup est ignoré
+  min_score: 6.0        # 6 = plus de signaux, 7-8 = seulement les meilleurs
+  ema_fast: 20
+  ema_mid: 50
+  ema_slow: 200
+  rsi_period: 14
+  atr_period: 14
+  adx_period: 14
+  adx_min: 18.0
+  swing_lookback: 300
+  zone_atr_mult: 0.6
+  sl_atr_buffer: 0.25
+  min_sl_pips: 4.0
+  max_sl_pips: 18.0
   rr_tp1: 1.5
   rr_tp2: 2.5
-  min_room_r: 1.2       # espace minimum avant la prochaine zone opposée
-  cooldown_bars: 6      # 30 min minimum entre deux alertes du même sens
+  min_room_r: 1.2
+  cooldown_bars: 6
   use_sessions: true
   sessions_utc:         # heures UTC (= heure d'Abidjan)
-    - [7, 11]           # Londres
-    - [12, 17]          # Londres / New York
+  - [7, 11]
+  - [12, 17]
+  spread_pips: 0.8
+  max_hold_bars: 48
+  disabled_patterns: []

@@ -1,99 +1,106 @@
 #!/usr/bin/env python3
-"""EURUSD M5 Analyzer — détection d'opportunités par chandeliers + confluences.
+"""EURUSD M5 Analyzer — espace d'analyse des chandeliers japonais.
 
-Commandes :
-  python main.py scan            analyse la dernière bougie clôturée
-  python main.py live            surveille en continu (toutes les 5 min) et envoie les alertes
-  python main.py backtest        teste la stratégie sur l'historique disponible
-  python main.py telegram-test   vérifie la configuration Telegram
+  python main.py                 lance l'espace d'analyse (navigateur + terminal)
+  python main.py watch           surveillance dans le terminal uniquement
+  python main.py scan            une analyse de la dernière bougie, puis quitte
+  python main.py backtest        backtest dans le terminal
+
+Options : --demo (marché simulé), --source mt5|yfinance|csv, --csv FICHIER,
+          --port 8000, --no-browser, --no-bell
 """
 from __future__ import annotations
 
 import argparse
-import json
 import logging
+import sys
 import time
-from datetime import datetime, timezone
-from pathlib import Path
+import webbrowser
 
-import pandas as pd
-
-from analyzer.chart import plot_signal
 from analyzer.config import load_config
-from analyzer.data import from_csv, load_data
-from analyzer.notifier import Notifier
-from analyzer.strategy import Analyzer
-
-STATE = Path("signals/state.json")
-log = logging.getLogger("eurusd")
+from analyzer.data import SOURCE_LABELS
+from analyzer.terminal import TerminalNotifier
 
 
-def market_context(an: Analyzer, i: int) -> str:
-    bias = {1: "HAUSSIÈRE 📈", -1: "BAISSIÈRE 📉", 0: "NEUTRE ↔"}[int(an.bias[i])]
-    zones = sorted(an.zones(i), key=lambda z: abs(z.price - an.c[i]))[:4]
-    zt = ", ".join(f"{z.kind[0].upper()} {z.price:.5f}×{z.touches}" for z in zones) or "—"
-    return (f"[{an.idx[i] + pd.Timedelta(minutes=5):%H:%M} UTC] {an.cfg.symbol} {an.c[i]:.5f} | "
-            f"H1 {bias} | RSI {an.rsi[i]:.0f} | ADX {an.adx[i]:.0f} | "
-            f"ATR {an.atr[i] / an.cfg.pip:.1f} pips | Zones : {zt}")
-
-
-def scan_once(cfg, notifier: Notifier, state: dict) -> None:
-    df = load_data(cfg)
-    an = Analyzer(df, cfg)
-    i = len(df) - 1
-    print(market_context(an, i))
-    sig = an.evaluate(i)
-    if sig is None:
-        return
-    key = str(sig.time)
-    if state.get("last_time") == key:
-        return  # déjà envoyé
-    last = state.get(f"last_{sig.direction}")
-    if last and (sig.time - pd.Timestamp(last)) < pd.Timedelta(minutes=5 * cfg.strategy.cooldown_bars):
-        log.info("Signal ignoré (cooldown)")
-        return
-    chart = plot_signal(an, i, sig, path=f"signals/{sig.time:%Y%m%d_%H%M}_{sig.side}.png")
-    notifier.send(sig, chart)
-    state.update({"last_time": key, f"last_{sig.direction}": key})
-    STATE.write_text(json.dumps(state))
-
-
-def cmd_live(cfg) -> None:
-    notifier = Notifier(cfg)
-    state = json.loads(STATE.read_text()) if STATE.exists() else {}
-    print(f"▶ Surveillance {cfg.symbol} M5 — score mini {cfg.strategy.min_score}/10. Ctrl+C pour arrêter.")
-    while True:
+def _utf8_console() -> None:
+    for stream in (sys.stdout, sys.stderr):
         try:
-            scan_once(cfg, notifier, state)
-        except Exception as e:  # noqa: BLE001 — la boucle ne doit jamais mourir
-            log.error("Erreur pendant l'analyse : %s", e)
-        # Attente jusqu'à la prochaine clôture M5 (+8 s pour laisser le courtier publier)
-        now = datetime.now(timezone.utc)
-        wait = 300 - (now.minute % 5) * 60 - now.second + 8
-        time.sleep(wait if wait > 0 else 300)
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
 
 
-def cmd_backtest(cfg, csv_path: str | None) -> None:
+def cmd_start(cfg, args, term: TerminalNotifier) -> None:
+    import threading
+
+    import uvicorn
+
+    from analyzer.server import create_app
+
+    url = f"http://{'localhost' if args.host in ('127.0.0.1', '0.0.0.0') else args.host}:{args.port}"
+    term.banner(url, SOURCE_LABELS.get(cfg.source, "auto (MetaTrader 5, sinon Yahoo Finance)"))
+    app = create_app(cfg, args.config, terminal=term)
+    if not args.no_browser:
+        threading.Timer(2.5, lambda: webbrowser.open(url)).start()
+    uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+
+
+def cmd_watch(cfg, term: TerminalNotifier, once: bool = False) -> None:
+    from analyzer.server import seconds_to_next_close
+    from analyzer.service import AnalysisService
+
+    svc = AnalysisService(cfg)
+    svc.listeners.append(lambda ev: term.signal(ev["signal"]) if ev["type"] == "signal"
+                         else term.error(ev["message"]) if ev["type"] == "error" else None)
+    if not once:
+        term.banner("(mode terminal — pas d'interface web)", SOURCE_LABELS.get(cfg.source, "auto"))
+    while True:
+        svc.refresh()
+        term.market(svc.snapshot())
+        if once:
+            radar = (svc.snapshot() or {}).get("radar")
+            if radar and not radar["blocked"]:
+                term.signal(radar)
+            return
+        time.sleep(seconds_to_next_close())
+
+
+def cmd_backtest(cfg) -> None:
     from analyzer.backtest import run_backtest
+    from analyzer.data import load_data
 
-    df = from_csv(csv_path) if csv_path else load_data(cfg)
-    print(f"Données : {len(df)} bougies M5 du {df.index[0]:%d/%m/%Y} au {df.index[-1]:%d/%m/%Y}")
-    trades, stats = run_backtest(df, cfg)
-    for k, v in stats.items():
-        print(f"  {k:<16} {v}")
-    if not trades.empty:
-        out = Path("signals/backtest_trades.csv")
-        trades.to_csv(out, index=False)
-        print(f"\nDétail par figure :\n{trades.groupby('pattern')['result_r'].agg(['count', 'mean', 'sum']).round(2)}")
-        print(f"\nTrades enregistrés dans {out}")
+    df, src = load_data(cfg)
+    print(f"Données {SOURCE_LABELS.get(src, src)} : {len(df)} bougies M5 "
+          f"du {df.index[0]:%d/%m/%Y} au {df.index[-1]:%d/%m/%Y}\n")
+    res = run_backtest(df, cfg)
+    st = res["stats"]
+    if not st.get("trades"):
+        print("Aucun trade sur la période.")
+        return
+    labels = {"trades": "Trades", "win_rate": "Réussite %", "total_r": "Total (R)",
+              "expectancy_r": "Espérance (R/trade)", "profit_factor": "Profit factor",
+              "max_drawdown_r": "Drawdown max (R)", "max_losing_streak": "Pertes d'affilée max",
+              "exits": "Sorties"}
+    for k, lab in labels.items():
+        print(f"  {lab:<22} {st.get(k)}")
+    print("\n  Par figure :")
+    for g in res["by_pattern"]:
+        print(f"    {g['key']:<38} {g['trades']:>4} trades  {g['win_rate']:>5.1f} %  {g['total_r']:>+7.2f} R")
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Analyseur EURUSD M5")
-    ap.add_argument("command", choices=["scan", "live", "backtest", "telegram-test"])
+    _utf8_console()
+    ap = argparse.ArgumentParser(description="EURUSD M5 Analyzer")
+    ap.add_argument("command", nargs="?", default="start", choices=["start", "watch", "scan", "backtest"])
     ap.add_argument("--config", default="config.yaml")
+    ap.add_argument("--source", choices=["auto", "mt5", "yfinance", "csv", "demo"])
+    ap.add_argument("--demo", action="store_true", help="marché simulé (pour découvrir l'outil)")
     ap.add_argument("--csv", help="fichier CSV de bougies M5 (heure UTC)")
-    ap.add_argument("--source", choices=["auto", "mt5", "yfinance", "csv"])
+    ap.add_argument("--bars", type=int, help="nombre de bougies à charger")
+    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--port", type=int, default=8000)
+    ap.add_argument("--no-browser", action="store_true")
+    ap.add_argument("--no-bell", action="store_true", help="pas de bip à chaque signal")
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args()
 
@@ -102,23 +109,25 @@ def main() -> None:
     cfg = load_config(a.config)
     if a.source:
         cfg.source = a.source
+    if a.demo:
+        cfg.source = "demo"
     if a.csv:
         cfg.source, cfg.csv_path = "csv", a.csv
-    Path("signals").mkdir(exist_ok=True)
+    if a.bars:
+        cfg.bars = a.bars
+    term = TerminalNotifier(cfg.symbol, bell=not a.no_bell)
 
-    if a.command == "scan":
-        state = json.loads(STATE.read_text()) if STATE.exists() else {}
-        scan_once(cfg, Notifier(cfg), state)
-    elif a.command == "live":
-        cmd_live(cfg)
+    if a.command == "start":
+        cmd_start(cfg, a, term)
+    elif a.command == "watch":
+        try:
+            cmd_watch(cfg, term)
+        except KeyboardInterrupt:
+            print("\nArrêt.")
+    elif a.command == "scan":
+        cmd_watch(cfg, term, once=True)
     elif a.command == "backtest":
-        cmd_backtest(cfg, a.csv)
-    elif a.command == "telegram-test":
-        if not (cfg.telegram_token and cfg.telegram_chat_id):
-            print("❌ TELEGRAM_TOKEN et TELEGRAM_CHAT_ID manquants dans le fichier .env")
-            return
-        ok = Notifier(cfg).telegram("✅ <b>EURUSD M5 Analyzer</b> est connecté. Les alertes arriveront ici.")
-        print("✅ Message envoyé" if ok else "❌ Échec — vérifie le token et le chat_id")
+        cmd_backtest(cfg)
 
 
 if __name__ == "__main__":

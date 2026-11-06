@@ -37,8 +37,9 @@ def zones_at(i: int, h, l, swings_hi, swings_lo, close: float, atr: float,
              lookback: int, merge_atr: float, k: int = SWING_K) -> list[Zone]:
     """Zones S/R connues à la clôture de la bougie i (aucune donnée future)."""
     lo_bound, hi_bound = i - lookback, i - k
-    levels = [h[j] for j in swings_hi if lo_bound <= j <= hi_bound]
-    levels += [l[j] for j in swings_lo if lo_bound <= j <= hi_bound]
+    a, b = np.searchsorted(swings_hi, [lo_bound, hi_bound + 1])
+    c, d = np.searchsorted(swings_lo, [lo_bound, hi_bound + 1])
+    levels = h[swings_hi[a:b]].tolist() + l[swings_lo[c:d]].tolist()
     if not levels:
         return []
     levels.sort()

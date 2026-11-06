@@ -10,6 +10,16 @@ from dataclasses import dataclass
 import numpy as np
 
 
+PATTERN_NAMES = [
+    "Avalement haussier", "Avalement baissier",
+    "Pin bar haussière (marteau)", "Pin bar baissière (étoile filante)",
+    "Étoile du matin", "Étoile du soir",
+    "Trois soldats blancs", "Trois corbeaux noirs",
+    "Pince basse (tweezer bottom)", "Pince haute (tweezer top)",
+    "Cassure d'inside bar haussière", "Cassure d'inside bar baissière",
+]
+
+
 @dataclass
 class Pattern:
     name: str

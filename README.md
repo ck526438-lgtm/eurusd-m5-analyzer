@@ -1,159 +1,163 @@
-# 📈 EURUSD M5 Analyzer
+# EURUSD M5 Analyzer
 
-Système d'analyse de l'**EURUSD en M5** qui lit les **chandeliers japonais**, vérifie le contexte
-(tendance H1, zones de support/résistance, momentum, sessions) et t'envoie une **notification
-Telegram avec le graphique** quand une bonne opportunité apparaît.
+**Espace d'analyse de l'EURUSD en M5** basé sur les chandeliers japonais : graphique en direct,
+radar qui note chaque bougie sur 10 et explique pourquoi, zones de support/résistance, journal
+qui suit automatiquement le résultat de chaque signal, backtest complet. Les alertes arrivent dans
+le **navigateur** (son + notification) et dans le **terminal**.
 
-> ⚠️ Outil d'aide à la décision, pas un robot qui trade à ta place. Aucune stratégie ne gagne à
-> tous les coups : teste d'abord en **compte démo**, et ne risque jamais plus de 1 % par trade.
+![Espace d'analyse](docs/analyse.png)
 
----
-
-## Comment il choisit une opportunité
-
-À chaque clôture de bougie M5, l'analyse se fait en 3 étapes :
-
-**1. Détection des figures de chandeliers**
-
-| Achat 🟢 | Vente 🔴 |
-|---|---|
-| Avalement haussier | Avalement baissier |
-| Pin bar / marteau | Pin bar / étoile filante |
-| Étoile du matin | Étoile du soir |
-| Trois soldats blancs | Trois corbeaux noirs |
-| Pince basse (tweezer bottom) | Pince haute (tweezer top) |
-| Cassure d'inside bar haussière | Cassure d'inside bar baissière |
-
-Les micro-bougies (< 0,6 ATR) sont ignorées : une figure ne compte que si elle a du poids.
-
-**2. Score de confluence sur 10**
-
-| Critère | Points |
-|---|---|
-| Force de la figure (1 à 3, +1 si plusieurs figures concordent) | 1 – 3 |
-| Dans le sens de la tendance **H1** (EMA 20/50) | +2 (−2 si contre) |
-| EMA 20/50 M5 alignées · prix du bon côté de l'EMA 200 | +1 · +0,5 |
-| Rejet d'une **zone S/R** (pivots fusionnés ; ≥2 touches = forte) ou rebond sur les EMA | +1 à +2 |
-| RSI qui confirme (et pas en excès) | +1 (−1 si excès) |
-| ADX ≥ 18 (marché directionnel) | +1 (−1 sinon) |
-| Session Londres / New York | +0,5 |
-
-Alerte envoyée si **score ≥ 6** (modifiable). Qualité : **A+** ≥ 8 · **A** ≥ 7 · **B** ≥ 6.
-
-**3. Gestion du risque automatique**
-
-- **Stop** derrière la mèche de la figure + 0,25 ATR (entre 4 et 18 pips, sinon le setup est rejeté)
-- **TP1** = 1,5 R · **TP2** = 2,5 R, ramené avant la prochaine zone opposée
-- Setup rejeté si une zone opposée bloque le prix à moins de 1,2 R
-- Hors sessions (07 h – 11 h et 12 h – 17 h UTC = heure d'Abidjan) : aucune alerte
-- Pas deux alertes dans le même sens en moins de 30 min
-
-Tout est calculé **sans regarder le futur** (vérifié par les tests) : seules les bougies
-clôturées sont utilisées, et la tendance H1 n'est prise qu'à la clôture de l'heure.
-
-### Exemple d'alerte
-
-```
-🔴 VENTE EURUSD — M5 — qualité A+ (9.0/10)
-🕐 Bougie clôturée 21/06 14:40 UTC
-📐 Avalement baissier
-
-Entrée : 1.06567
-Stop   : 1.06645  (7.8 pips)
-TP1    : 1.06450  (1:1.5)
-TP2    : 1.06372  (1:2.5)
-
-Pourquoi :
-• Figure : Avalement baissier (force 2/3)
-• Dans le sens de la tendance H1
-• EMA 20/50 M5 alignées
-• Rejet de la zone de résistance 1.06613
-• RSI redescend (34)
-• Marché directionnel (ADX 30)
-```
-+ l'image du graphique (bougies, EMA, zones, entrée/SL/TP).
+> ⚠️ Outil d'aide à la décision, pas un robot de trading. Aucune stratégie ne gagne à tous les
+> coups : vérifie le backtest sur **tes** données MT5, passe par un **compte démo**, et ne risque
+> jamais plus de 1 % du capital par trade.
 
 ---
 
-## Installation
+## Démarrage rapide
 
 ```bash
 git clone https://github.com/ck526438-lgtm/eurusd-m5-analyzer.git
 cd eurusd-m5-analyzer
 pip install -r requirements.txt
+pip install MetaTrader5          # Windows : prix temps réel de ton courtier
+
+python main.py                   # ouvre l'espace d'analyse sur http://localhost:8000
+python main.py --demo            # pour découvrir l'interface sans MT5 (marché simulé)
 ```
 
-### Source des données
-
-| Source | Où | Qualité |
-|---|---|---|
-| **MetaTrader 5** (recommandé) | Windows, MT5 ouvert et connecté | Prix réels de ton courtier, temps réel |
-| Yahoo Finance | Partout (PC, Termux, serveur) | Gratuit, léger retard possible |
-| CSV | Pour le backtest | Ton propre historique |
-
-Pour MT5 : `pip install MetaTrader5`, puis dans `config.yaml` mets le nom exact du symbole
-(`EURUSD`, `EURUSDm`…) et `broker_utc_offset` (décalage de l'heure du serveur, souvent 2 ou 3).
-En mode `auto`, MT5 est essayé d'abord, puis Yahoo.
-
-### Notifications Telegram (5 min)
-
-1. Sur Telegram, écris à **@BotFather** → `/newbot` → copie le **token**.
-2. Envoie un message à ton nouveau bot, puis ouvre
-   `https://api.telegram.org/bot<TOKEN>/getUpdates` et copie le `"chat":{"id": ...}`.
-3. Copie `.env.example` en `.env` et remplis `TELEGRAM_TOKEN` et `TELEGRAM_CHAT_ID`.
-4. Vérifie : `python main.py telegram-test`
-
-(Optionnel : `DISCORD_WEBHOOK` dans `.env`, et `pip install plyer` pour les notifications bureau.)
+Sous Windows : double-clique sur **`start.bat`** (installe tout la première fois, puis lance).
+Garde MetaTrader 5 ouvert et connecté à ton compte.
 
 ---
 
-## Utilisation
+## Ce que contient l'espace
+
+### Analyse
+- **Graphique** chandeliers M5 (600 bougies) avec EMA 20/50/200, zones S/R, flèches des signaux
+  passés (cliquables) et niveaux Entrée / SL / TP1 / TP2 du signal en cours ; **RSI** synchronisé.
+- **Radar** : la dernière bougie clôturée est analysée et notée sur 10, critère par critère
+  (✓ / ✕ avec les points). S'il n'y a pas de signal, il dit **pourquoi** (score trop bas, zone
+  opposée trop proche, stop trop large, hors session…).
+- **Contexte** : tendance H1 et M5, RSI, ADX, volatilité (ATR), session en cours.
+- **Zones clés** classées autour du prix, avec leur solidité (nombre de touches) et la distance en pips.
+
+### Signaux
+Journal de tous les signaux (SQLite) avec **suivi automatique** : en cours, TP2 atteint,
+TP1 puis BE, stop, clôturé au temps — et le résultat en R. Filtres, détail du score, **note
+personnelle** par signal, export CSV.
+
+![Journal](docs/signaux.png)
+
+### Backtest
+Sur 1 500 à 50 000 bougies : réussite, espérance, profit factor, drawdown, série de pertes,
+**courbe de capital**, résultats **par figure**, **par qualité** et **par heure**.
+
+![Backtest](docs/backtest.png)
+
+### Réglages
+Tout se règle dans l'interface (enregistré dans `config.yaml`) : source des données, score
+minimum, filtres, gestion du risque, **figures actives** (désactive celles que le backtest
+montre perdantes), notifications.
+
+---
+
+## Notifications
+
+| Où | Quoi |
+|---|---|
+| **Terminal** | Une ligne de suivi à chaque clôture M5 + un bandeau coloré avec bip à chaque signal |
+| **Navigateur** | Son + notification système + toast (cloche en haut à droite) |
+| **Windows** (option) | Notification bureau même navigateur fermé — `pip install plyer` puis activer dans Réglages |
+
+Exemple dans le terminal :
+
+```
+14:10  EURUSD 1.03992  H1 ▲  RSI 40  ADX 30  ATR 4.9p  │  ACHAT Avalement haussier 9.0/10 — Zone opposée trop proche
+
+ ▲ ACHAT EURUSD  ·  qualité A+  ·  score 9/10
+  Avalement haussier  —  bougie clôturée 06/11 14:15 UTC
+  Entrée 1.04006   Stop 1.03966 (4.0 pips)   TP1 1.04066 (1:1.5)   TP2 1.04106 (1:2.5)
+    ✓ Figure : Avalement haussier  +3
+    ✓ Dans le sens de la tendance H1  +2
+    ✓ Rejet du support 1.03935 (2 touches)  +2
+    ...
+```
+
+Mode terminal seul (sans navigateur) : `python main.py watch`.
+
+---
+
+## La méthode
+
+À chaque clôture M5 (+8 s pour laisser le courtier publier la bougie) :
+
+**1. Figures de chandeliers** — avalement, pin bar (marteau / étoile filante), étoile du matin /
+du soir, trois soldats / trois corbeaux, pinces (tweezer), cassure d'inside bar. Les
+micro-bougies (< 0,6 ATR) sont ignorées.
+
+**2. Score de confluence /10**
+
+| Critère | Points |
+|---|---|
+| Force de la figure (+1 si plusieurs figures concordent) | 1 à 3 |
+| Sens de la tendance **H1** | +2 (−2 si contre) |
+| EMA 20/50 M5 alignées · bon côté de l'EMA 200 | +1 · +0,5 |
+| Rejet d'une zone S/R (forte si ≥ 2 touches) ou rebond sur les EMA | +1 à +2 |
+| RSI qui confirme (pas en excès) | +1 (−1 si excès) |
+| ADX ≥ 18 | +1 (−1 sinon) |
+| Session Londres / New York | +0,5 |
+
+Qualité : **A+** ≥ 8 · **A** ≥ 7 · **B** ≥ 6 (seuil réglable).
+
+**3. Risque** — stop derrière la mèche + 0,25 ATR (4 à 18 pips), TP1 = 1,5 R, TP2 = 2,5 R ramené
+avant la zone opposée ; setup refusé si une zone bloque à moins de 1,2 R.
+
+Aucune donnée future n'est utilisée (bougies clôturées uniquement, tendance H1 prise à la
+clôture de l'heure) — c'est vérifié par un test automatique.
+
+---
+
+## Sources de données
+
+| Source | Usage |
+|---|---|
+| **MetaTrader 5** (recommandé) | Windows, terminal MT5 ouvert. Règle le **symbole** exact (`EURUSD`, `EURUSDm`…) et le **décalage horaire** du serveur (souvent 2 ou 3) |
+| Yahoo Finance | Gratuit, partout ; léger retard possible, 60 jours max |
+| CSV | Ton propre historique (`time,open,high,low,close` en UTC) |
+| Démo | Marché simulé pour découvrir l'interface — **prix non réels** |
+
+`auto` essaie MT5 puis Yahoo.
+
+## Commandes
 
 ```bash
-python main.py live            # surveillance continue, analyse à chaque clôture M5
-python main.py scan            # une seule analyse de la dernière bougie
-python main.py backtest        # backtest sur les données disponibles
-python main.py backtest --csv historique.csv
-python main.py live --source yfinance -v
+python main.py                    # espace d'analyse (navigateur + terminal)
+python main.py watch              # terminal uniquement
+python main.py scan               # une analyse puis quitte
+python main.py backtest --bars 50000
+# options : --demo  --source mt5|yfinance|csv  --csv FICHIER  --port 8000  --no-browser  --no-bell
 ```
 
-Sous Windows, double-clique sur **`start_windows.bat`** (crée l'environnement et lance `live`).
-
-Toutes les alertes sont enregistrées dans `signals/journal.csv` avec leur graphique.
-
-### Le backtest
-
-Simulation réaliste : spread de 0,8 pip, 50 % fermé à TP1 puis stop au point d'entrée,
-reste à TP2, sortie forcée après 4 h ; si SL et TP sont touchés dans la même bougie, on
-compte le SL (hypothèse prudente). Résultat : taux de réussite, espérance en R, profit factor,
-drawdown max, et détail **par figure** — pour désactiver celles qui ne marchent pas sur ton
-courtier.
-
-**Lance le backtest sur tes vraies données MT5 avant de trader** (augmente `bars` à 50000
-dans `config.yaml` pour plusieurs mois d'historique).
-
----
-
-## Réglages utiles (`config.yaml`)
-
-- Trop d'alertes ? → `min_score: 7` ou `8`
-- Pas assez ? → `min_score: 5.5`, ou `use_sessions: false`
-- Ton courtier a un gros spread ? → monte `min_sl_pips`
+API documentée sur `http://localhost:8000/api/docs`.
 
 ## Structure
 
 ```
 analyzer/
-  data.py        sources MT5 / Yahoo / CSV (bougies clôturées uniquement)
-  indicators.py  EMA, RSI, ATR, ADX, tendance H1
   patterns.py    figures de chandeliers
-  structure.py   pivots et zones support / résistance
-  strategy.py    score de confluence, SL / TP
-  chart.py       graphique de l'alerte
-  notifier.py    Telegram, Discord, bureau, journal
+  indicators.py  EMA, RSI, ATR, ADX, tendance H1
+  structure.py   pivots et zones S/R
+  strategy.py    score de confluence, SL/TP, radar
   backtest.py    simulation des trades
-main.py          ligne de commande
-tests/           tests (dont un test anti « regard vers le futur »)
+  journal.py     journal SQLite + suivi des résultats
+  service.py     boucle d'analyse
+  server.py      API FastAPI + flux temps réel
+  terminal.py    notifications terminal
+  data.py        MT5 / Yahoo / CSV / démo
+web/             interface (HTML/CSS/JS, graphiques TradingView Lightweight Charts)
+tests/           tests (moteur, anti-lookahead, API)
 ```
 
-Tests : `python -m pytest -q`
+Tests : `pip install -r requirements-dev.txt && python -m pytest -q`
+
+Graphiques : [TradingView Lightweight Charts™](https://www.tradingview.com/lightweight-charts/) (Apache 2.0).

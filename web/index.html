@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EURUSD M5 · Espace d'analyse</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2311151c'/%3E%3Cpath d='M9 8v16M9 12h0' stroke='%2322c39a' stroke-width='2.5'/%3E%3Crect x='6.5' y='12' width='5' height='8' rx='1' fill='%2322c39a'/%3E%3Cpath d='M22 6v18' stroke='%23f0566a' stroke-width='2.5'/%3E%3Crect x='19.5' y='10' width='5' height='9' rx='1' fill='%23f0566a'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M9 6v20" stroke="var(--up)" stroke-width="2"/><rect x="6" y="11" width="6" height="10" rx="1.2" fill="var(--up)"/><path d="M23 5v19" stroke="var(--down)" stroke-width="2"/><rect x="20" y="9" width="6" height="10" rx="1.2" fill="var(--down)"/></svg>
+    <div>
+      <div class="brand-name">EURUSD <span>M5</span></div>
+      <div class="brand-sub">Espace d'analyse</div>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="analyse">Analyse</button>
+    <button class="tab" data-view="signaux">Signaux <span class="pill" id="open-count" hidden></span></button>
+    <button class="tab" data-view="backtest">Backtest</button>
+    <button class="tab" data-view="reglages">Réglages</button>
+  </nav>
+  <div class="top-right">
+    <div class="feed" id="feed"><span class="dot"></span><span id="feed-label">Connexion…</span></div>
+    <div class="countdown" title="Prochaine clôture M5"><span class="muted">Bougie</span> <b id="countdown">--:--</b></div>
+    <button class="icon-btn" id="alerts-btn" title="Alertes navigateur et son">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3a6 6 0 0 0-6 6v3.5L4.5 15v1h15v-1L18 12.5V9a6 6 0 0 0-6-6Zm0 18a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 21Z" fill="currentColor"/></svg>
+    </button>
+    <button class="btn primary" id="scan-btn">
+      <svg viewBox="0 0 24 24" width="15" height="15"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      Analyser
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- ============================== ANALYSE ============================== -->
+  <section class="view active" id="view-analyse">
+    <div class="banner" id="error-banner" hidden></div>
+    <div class="analyse-grid">
+      <div class="col-main">
+        <div class="quote card">
+          <div class="quote-main">
+            <div class="label">EUR / USD</div>
+            <div class="price mono" id="price">—</div>
+            <div class="chg mono" id="chg"></div>
+          </div>
+          <div class="quote-stats">
+            <div><span class="label">Plus haut 24 h</span><b class="mono" id="day-high">—</b></div>
+            <div><span class="label">Plus bas 24 h</span><b class="mono" id="day-low">—</b></div>
+            <div><span class="label">ATR M5</span><b class="mono" id="atr">—</b></div>
+            <div><span class="label">Dernière bougie</span><b class="mono" id="last-close">—</b></div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="chart-toolbar">
+            <div class="legend" id="legend"></div>
+            <div class="toggles">
+              <label class="chk"><input type="checkbox" id="t-ema" checked><span>EMA</span></label>
+              <label class="chk"><input type="checkbox" id="t-zones" checked><span>Zones</span></label>
+              <label class="chk"><input type="checkbox" id="t-sig" checked><span>Signaux</span></label>
+              <button class="btn ghost sm" id="fit-btn">Recentrer</button>
+            </div>
+          </div>
+          <div id="chart" class="chart"></div>
+          <div class="rsi-head"><span class="label">RSI 14</span><span class="mono" id="rsi-val"></span></div>
+          <div id="rsi-chart" class="rsi-chart"></div>
+        </div>
+
+        <div class="under-chart">
+          <div class="card">
+            <div class="card-head"><h3>Zones clés</h3><span class="muted sm">distance en pips</span></div>
+            <div id="zones" class="zones"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Derniers signaux</h3><button class="link" data-goto="signaux">Tout voir</button></div>
+            <div id="recent" class="recent"></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="col-side">
+        <div class="card radar" id="radar-card">
+          <div class="card-head">
+            <h3>Radar</h3>
+            <span class="muted sm" id="radar-time"></span>
+          </div>
+          <div id="radar-body" class="radar-body"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Contexte du marché</h3></div>
+          <div class="ctx-grid" id="ctx"></div>
+        </div>
+
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============================== SIGNAUX ============================== -->
+  <section class="view" id="view-signaux">
+    <div class="kpis" id="journal-kpis"></div>
+    <div class="card">
+      <div class="card-head wrap">
+        <h3>Journal des signaux</h3>
+        <div class="filters">
+          <div class="seg" id="f-side">
+            <button class="on" data-v="">Tous</button><button data-v="ACHAT">Achats</button><button data-v="VENTE">Ventes</button>
+          </div>
+          <select id="f-status">
+            <option value="">Tous les statuts</option><option value="en cours">En cours</option>
+            <option value="TP2">TP2 atteint</option><option value="BE">TP1 puis BE</option>
+            <option value="SL">Stop touché</option><option value="temps">Clôturé au temps</option>
+          </select>
+          <select id="f-quality">
+            <option value="">Toutes qualités</option><option>A+</option><option>A</option><option>B</option>
+          </select>
+          <a class="btn ghost sm" href="/api/journal.csv">Exporter CSV</a>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="journal-table">
+          <thead><tr>
+            <th>Date (UTC)</th><th>Sens</th><th>Figure</th><th>Score</th><th class="r">Entrée</th>
+            <th class="r">Stop</th><th class="r">TP1</th><th class="r">TP2</th><th>Statut</th><th class="r">Résultat</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="journal-empty" hidden>Aucun signal pour ces filtres.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== BACKTEST ============================= -->
+  <section class="view" id="view-backtest">
+    <div class="card bt-form">
+      <div class="field">
+        <label for="bt-bars">Historique</label>
+        <select id="bt-bars">
+          <option value="1500">1 500 bougies (~5 jours)</option>
+          <option value="6000">6 000 bougies (~3 semaines)</option>
+          <option value="20000" selected>20 000 bougies (~10 semaines)</option>
+          <option value="50000">50 000 bougies (~6 mois, MT5)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="bt-score">Score minimum</label>
+        <input type="number" id="bt-score" min="0" max="10" step="0.5">
+      </div>
+      <div class="field">
+        <label for="bt-spread">Spread (pips)</label>
+        <input type="number" id="bt-spread" min="0" max="5" step="0.1">
+      </div>
+      <button class="btn primary" id="bt-run">Lancer le backtest</button>
+      <p class="muted sm bt-note">50 % fermé à TP1 puis stop au point d'entrée, reste à TP2, sortie forcée après 4 h. SL compté en premier si SL et TP sont dans la même bougie.</p>
+    </div>
+    <div id="bt-result" hidden>
+      <div class="kpis" id="bt-kpis"></div>
+      <div class="bt-grid">
+        <div class="card">
+          <div class="card-head"><h3>Courbe de capital</h3><span class="muted sm">en R cumulés</span></div>
+          <div id="equity-chart" class="equity-chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Par heure de clôture (UTC)</h3></div>
+          <div id="bt-hours" class="hours"></div>
+        </div>
+      </div>
+      <div class="bt-grid">
+        <div class="card">
+          <div class="card-head"><h3>Par figure</h3><span class="muted sm">désactive celles qui perdent dans Réglages</span></div>
+          <div class="table-wrap"><table class="table" id="bt-patterns"><thead><tr><th>Figure</th><th class="r">Trades</th><th class="r">Réussite</th><th class="r">Espérance</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Par qualité</h3></div>
+          <div class="table-wrap"><table class="table" id="bt-quality"><thead><tr><th>Qualité</th><th class="r">Trades</th><th class="r">Réussite</th><th class="r">Espérance</th><th>Total</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Trades</h3><span class="muted sm" id="bt-period"></span></div>
+        <div class="table-wrap tall"><table class="table" id="bt-trades"><thead><tr><th>Date (UTC)</th><th>Sens</th><th>Figure</th><th>Score</th><th class="r">Entrée</th><th>Sortie</th><th class="r">Résultat</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="empty big" id="bt-empty">Lance un backtest pour mesurer la stratégie sur l'historique.</div>
+  </section>
+
+  <!-- ============================== RÉGLAGES ============================= -->
+  <section class="view" id="view-reglages">
+    <form id="settings-form" class="settings">
+      <div class="card">
+        <div class="card-head"><h3>Données</h3></div>
+        <div class="form-grid">
+          <div class="field"><label>Source</label>
+            <select name="source">
+              <option value="auto">Auto (MT5, sinon Yahoo)</option><option value="mt5">MetaTrader 5</option>
+              <option value="yfinance">Yahoo Finance</option><option value="csv">Fichier CSV</option><option value="demo">Démo (simulé)</option>
+            </select></div>
+          <div class="field"><label>Symbole chez le courtier</label><input name="symbol"></div>
+          <div class="field"><label>Bougies chargées</label><input name="bars" type="number" min="300" max="100000" step="100"></div>
+          <div class="field"><label>Décalage heure serveur MT5 (h)</label><input name="broker_utc_offset" type="number" min="-12" max="14"></div>
+          <div class="field span2"><label>Fichier CSV (si source CSV)</label><input name="csv_path" placeholder="C:\chemin\historique.csv"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Sélection des signaux</h3></div>
+        <div class="form-grid">
+          <div class="field span2"><label>Score minimum : <b id="ms-out" class="mono"></b> / 10</label>
+            <input name="strategy.min_score" type="range" min="4" max="9" step="0.5"></div>
+          <div class="field"><label>ADX minimum</label><input name="strategy.adx_min" type="number" step="1" min="0" max="50"></div>
+          <div class="field"><label>Délai entre signaux (bougies)</label><input name="strategy.cooldown_bars" type="number" min="0" max="48"></div>
+          <div class="field"><label class="switch"><input type="checkbox" name="strategy.use_sessions"><span></span>Seulement pendant les sessions</label></div>
+          <div class="field"><label>Sessions (UTC)</label><input name="strategy.sessions_utc" placeholder="7-11, 12-17"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Gestion du risque</h3></div>
+        <div class="form-grid">
+          <div class="field"><label>Stop minimum (pips)</label><input name="strategy.min_sl_pips" type="number" step="0.5"></div>
+          <div class="field"><label>Stop maximum (pips)</label><input name="strategy.max_sl_pips" type="number" step="0.5"></div>
+          <div class="field"><label>Marge sous la mèche (ATR)</label><input name="strategy.sl_atr_buffer" type="number" step="0.05"></div>
+          <div class="field"><label>TP1 (R)</label><input name="strategy.rr_tp1" type="number" step="0.1"></div>
+          <div class="field"><label>TP2 (R)</label><input name="strategy.rr_tp2" type="number" step="0.1"></div>
+          <div class="field"><label>Espace mini avant zone opposée (R)</label><input name="strategy.min_room_r" type="number" step="0.1"></div>
+          <div class="field"><label>Spread simulé (pips)</label><input name="strategy.spread_pips" type="number" step="0.1"></div>
+          <div class="field"><label>Durée max d'un trade (bougies)</label><input name="strategy.max_hold_bars" type="number" step="1"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Figures actives</h3><span class="muted sm">décoche celles qui ne marchent pas chez ton courtier</span></div>
+        <div class="patterns" id="pattern-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Notifications</h3></div>
+        <div class="form-grid">
+          <div class="field"><label class="switch"><input type="checkbox" id="n-browser"><span></span>Notification du navigateur</label></div>
+          <div class="field"><label class="switch"><input type="checkbox" id="n-sound"><span></span>Son à chaque signal</label></div>
+          <div class="field"><label class="switch"><input type="checkbox" name="desktop_notifications"><span></span>Notification Windows (plyer)</label></div>
+          <p class="muted sm span2">Les signaux s'affichent aussi en couleur dans le terminal qui a lancé l'application, avec un bip.</p>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <span class="muted sm" id="save-msg"></span>
+        <button type="button" class="btn ghost" id="reset-btn">Annuler</button>
+        <button type="submit" class="btn primary">Enregistrer</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="/static/vendor/lightweight-charts.standalone.production.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
